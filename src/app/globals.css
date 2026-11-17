@@ -13,6 +13,8 @@
   --color-ink-soft: #4a4a4a;
   --color-paper: #ffffff;
   --color-cream: #f7f3ec;
+  /* Sampled from the hero product photo backdrop so the image blends in */
+  --color-linen: #efe9e2;
   --color-mist: #f5f5f5;
   --color-line: #e7e2d9;
 
@@ -20,15 +22,16 @@
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   --default-transition-duration: 300ms;
+}
 
-  --animate-kinetic: kinetic 18s linear infinite;
-  @keyframes kinetic {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(-50%);
-    }
+/* Hero photo: fade every edge to transparent so the photo's slightly darker
+   right-hand vignette melts into the matching bg-linen section. */
+@layer components {
+  .hero-photo-fade {
+    mask-image:
+      linear-gradient(to right, transparent, #000 4%, #000 92%, transparent),
+      linear-gradient(to bottom, transparent, #000 5%, #000 90%, transparent);
+    mask-composite: intersect;
   }
 }
 

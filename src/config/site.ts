@@ -97,8 +97,7 @@ export const site = {
   media: {
     /**
      * Hero motion. Drop a Higgsfield AI export (mp4/webm) URL here and the hero
-     * plays it inside the media frame. Leave null to use the built-in kinetic
-     * type animation.
+     * plays it in place of the hero product photo. Leave null to show the photo.
      */
     heroVideo: process.env.NEXT_PUBLIC_HERO_VIDEO_URL ?? null,
     brandFilm: "https://player.vimeo.com/video/893634142?h=07428c3f3a&autoplay=1",

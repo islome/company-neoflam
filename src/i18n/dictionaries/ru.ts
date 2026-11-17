@@ -23,12 +23,21 @@ const ru: Dictionary = {
   },
   hero: {
     eyebrow: "Neoflam Узбекистан · Официальный филиал",
-    titleLines: ["Здоровая корейская кухня", "теперь в Узбекистане"],
+    titleLines: ["Здоровая кухня,", "счастливая жизнь"],
     subtitle:
       "Кастрюли и сковороды без вредных веществ, из натуральных материалов. Готовьте каждый день полезно и красиво.",
     cta: "Наша продукция",
     proof: "FIKA Objet Comfort · победитель German Design Award 2025",
-    kinetic: "HEALTHY",
+    /** Word inside titleLines shown in bold brand red. */
+    accent: "счастливая",
+    /** Alt text for each hero slide, in slide order. */
+    imageAlts: [
+      "Набор FIKA: кастрюля, сковорода-гриль и глубокая сковорода",
+      "Набор FIKA: две кастрюли, ковш, сковороды и квадратная сковорода",
+      "Набор FIKA: глубокая сковорода, кастрюля, ковш, квадратная и гриль-сковороды",
+      "Розовый набор кастрюль и сковород Neoflam",
+    ],
+    showSlide: "Показать фото {n}",
   },
   products: {
     title: "Наша продукция",

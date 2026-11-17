@@ -40,7 +40,7 @@ Without Supabase keys the store list comes from `src/config/site.ts`.
 
 ## Higgsfield AI hero video
 
-The hero shows a coded kinetic "HEALTHY" animation. To use a Higgsfield AI clip instead, upload the exported mp4/webm (for example to Supabase Storage) and set `NEXT_PUBLIC_HERO_VIDEO_URL`.
+The hero shows the FIKA product photo (`public/images/hero/fika-set.webp`). To use a Higgsfield AI clip instead, upload the exported mp4/webm (for example to Supabase Storage) and set `NEXT_PUBLIC_HERO_VIDEO_URL`.
 
 ## Deploy
 

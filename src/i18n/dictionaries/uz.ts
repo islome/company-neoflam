@@ -21,12 +21,21 @@ const uz = {
   },
   hero: {
     eyebrow: "Neoflam O‘zbekiston · Rasmiy filial",
-    titleLines: ["Koreyaning sog‘lom oshxonasi", "endi O‘zbekistonda"],
+    titleLines: ["Sog‘lom oshxona,", "baxtli hayot"],
     subtitle:
       "Zararli moddalarsiz qozon va tovalar, tabiiy materiallardan yasalgan. Har kungi taomni sog‘lom va chiroyli tayyorlang.",
     cta: "Mahsulotlarimiz",
     proof: "FIKA Objet Comfort · 2025 German Design Award g‘olibi",
-    kinetic: "HEALTHY",
+    /** Word inside titleLines shown in bold brand red. */
+    accent: "baxtli",
+    /** Alt text for each hero slide, in slide order. */
+    imageAlts: [
+      "FIKA qozon, grill tova va chuqur tova to‘plami",
+      "FIKA to‘plami: ikki qozon, kichik kastryula, tovalar va kvadrat tova",
+      "FIKA to‘plami: chuqur tova, qozon, kichik kastryula, kvadrat va grill tovalar",
+      "Pushti rangli Neoflam qozon va tovalar to‘plami",
+    ],
+    showSlide: "{n}-rasmni ko‘rsatish",
   },
   products: {
     title: "Mahsulotlarimiz",
