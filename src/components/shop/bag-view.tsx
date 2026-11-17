@@ -99,6 +99,11 @@ export function BagView({ products, lang, t, catalog, detail, stores, storesT }:
                                 {detail.variantTypes[variant.type]} {sizeLabel(variant, detail)}
                               </p>
                             )}
+                            {item.color && item.color in catalog.colors && (
+                              <p className="body-6 text-ink-soft">
+                                {detail.color}: {catalog.colors[item.color as keyof typeof catalog.colors]}
+                              </p>
+                            )}
                           </div>
                           <p className="title-3 shrink-0 text-right text-ink">
                             {product.price === null ? (

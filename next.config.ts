@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Product photos uploaded in the 3D Studio live in Supabase Storage.
+const supabaseImages = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? [new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/**`)]
+  : [];
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
@@ -12,6 +17,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       new URL("https://neoflam.com/en/img/**"),
       new URL("https://neoflam.com/upload/**"),
+      ...supabaseImages,
     ],
   },
   turbopack: {

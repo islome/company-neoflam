@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasLocale, locales } from "@/i18n/config";
@@ -12,9 +11,12 @@ import { getProductModels } from "@/lib/product-models";
 import { formatPrice } from "@/components/catalog/product-card";
 import { Swatch } from "@/components/catalog/swatch";
 import { HeroGallery } from "@/components/detail/hero-gallery";
+import { ProductSelection } from "@/components/detail/product-selection";
 import { Purchase } from "@/components/detail/purchase";
 import { Related } from "@/components/detail/related";
 import { Reveal } from "@/components/reveal";
+import { CaretDown } from "@phosphor-icons/react/dist/ssr";
+import { sizeLabel } from "@/lib/variant-label";
 
 export async function generateStaticParams() {
   const products = await getProducts();
@@ -94,98 +96,101 @@ async function ProductDetail({ params }: { params: PageProps<"/[lang]/products/[
     ...products.filter((p) => p.slug !== product.slug && p.category !== product.category),
   ].slice(0, 8);
 
-  // Let the first (and, if needed, last) gallery image span two columns so rows of three stay full.
-  const span = (i: number) => {
-    const n = images.length;
-    if (n % 3 === 2 && i === 0) return true;
-    if (n % 3 === 1 && (i === 0 || i === n - 1)) return true;
-    return false;
-  };
-
   return (
     <main id="main" className="mx-auto max-w-screen-2xl px-4 pb-24 sm:px-6 lg:px-12">
-      {/* Hero: gallery and product information */}
-      <section aria-labelledby="product-title" className="grid items-center gap-8 pt-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-16">
-        <HeroGallery
-          images={images.slice(0, 6)}
-          name={product.name}
-          labels={{ prev: t.prev, next: t.next, showImage: t.showImage }}
-          model3d={
-            model && {
-              model,
-              labels: { ...t.model, alt: t.model.alt.replace("{name}", product.name) },
-              colorNames: catalog.colors,
+      {/* Hero: the gallery stays pinned while the buy box and its details scroll beside it. */}
+      <ProductSelection initialColor={product.colors[0] ?? null}>
+        <section
+          aria-labelledby="product-title"
+          className="grid items-start gap-8 pt-6 lg:grid-cols-[minmax(0,540px)_minmax(0,460px)] lg:justify-center lg:gap-16 xl:grid-cols-[minmax(0,600px)_minmax(0,480px)] xl:gap-20"
+        >
+          <HeroGallery
+            images={images}
+            name={product.name}
+            labels={{ prev: t.prev, next: t.next, showImage: t.showImage, photos: t.photos }}
+            model3d={
+              model && {
+                model,
+                labels: { ...t.model, alt: t.model.alt.replace("{name}", product.name) },
+                colorNames: catalog.colors,
+              }
             }
-          }
-        />
+          />
 
-        <div className="max-w-md lg:justify-self-center">
-          <nav aria-label="Breadcrumb" className="caption-5 flex flex-wrap gap-1 text-ink-soft">
-            <Link href={`/${lang}/products`} className="rounded-sm hover:text-ink">
-              {t.breadcrumb}
-            </Link>
-            <span aria-hidden>/</span>
-            <Link href={`/${lang}/products?category=${product.category}`} className="rounded-sm hover:text-ink">
-              {catalog.categories[product.category]}
-            </Link>
-          </nav>
-          <p className="title-4 mt-6 text-ink">{catalog.categories[product.category]}</p>
-          <h1 id="product-title" className="heading-4 mt-1 text-ink">
-            {product.name}
-          </h1>
-          <p className="title-3 mt-2 text-ink">
-            {product.price === null ? catalog.priceSoon : formatPrice(product.price, catalog)}
-          </p>
-          <p className="body-6 mt-6 text-ink-soft">{product.tagline[lang]}</p>
-          <dl className="caption-5 mt-6 flex flex-col gap-1 text-ink">
-            <div className="flex gap-1">
-              <dt>{t.collection}:</dt>
-              <dd>{product.name}</dd>
-            </div>
-            <div className="flex items-center gap-1">
-              <dt>{t.color}:</dt>
-              <dd className="flex items-center gap-2">
-                {product.colors.map((c) => (
-                  <span key={c} className="inline-flex items-center gap-1">
-                    <Swatch color={c} className="size-3" />
-                    {catalog.colors[c]}
-                  </span>
+          <div className="w-full max-w-lg">
+            <nav aria-label="Breadcrumb" className="body-6 text-ink-soft">
+              <Link href={`/${lang}/products?category=${product.category}`} className="rounded-sm hover:text-ink">
+                {catalog.categories[product.category]}
+              </Link>
+            </nav>
+            <h1 id="product-title" className="heading-4 mt-1 text-ink">
+              {product.name}
+            </h1>
+            <p className="title-1 mt-3 text-ink">
+              {product.price === null ? catalog.priceSoon : formatPrice(product.price, catalog)}
+            </p>
+
+            {!!product.features?.length && (
+              <ul className="mt-5 flex flex-wrap gap-2">
+                {product.features.map((f) => (
+                  <li
+                    key={f}
+                    className={`caption-1 rounded-full px-3.5 py-1.5 ${
+                      f === "pfasFree" ? "bg-[#e6f2ea] text-[#1f6b3a]" : "border border-line text-ink"
+                    }`}
+                  >
+                    {catalog.features[f]}
+                  </li>
                 ))}
-              </dd>
+              </ul>
+            )}
+
+            <Purchase product={product} variants={variants} cover={images[0]} t={t} catalog={catalog} shopT={shopT} lang={lang} />
+
+            <div className="mt-8 border-b border-line">
+              <Accordion title={t.details}>
+                <p>{product.tagline[lang]}</p>
+                <dl className="mt-3 flex flex-col gap-1">
+                  <div className="flex gap-1">
+                    <dt>{t.collection}:</dt>
+                    <dd className="text-ink">{product.name}</dd>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1">
+                    <dt>{t.color}:</dt>
+                    <dd className="flex flex-wrap items-center gap-2 text-ink">
+                      {product.colors.map((c) => (
+                        <span key={c} className="inline-flex items-center gap-1">
+                          <Swatch color={c} className="size-3" />
+                          {catalog.colors[c]}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                  {variants.length > 0 && (
+                    <div className="flex gap-1">
+                      <dt>{t.sizes}:</dt>
+                      <dd className="text-ink">
+                        {variants.map((v) => `${t.variantTypes[v.type]} ${sizeLabel(v, t)}`).join(", ")}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </Accordion>
+              <Accordion title={t.careTitle}>
+                <p>{t.care[product.category]}</p>
+              </Accordion>
+              <Accordion title={t.deliveryTitle}>
+                <p>
+                  {t.deliveryBody}{" "}
+                  <Link href={`/${lang}#stores`} className="rounded-sm text-ink underline underline-offset-4">
+                    {t.cta}
+                  </Link>
+                </p>
+              </Accordion>
             </div>
-          </dl>
-        </div>
-      </section>
-
-      {/* Gallery grid */}
-      <section aria-label={t.gallery} className="pt-16 lg:pt-24">
-        <ul className="grid grid-cols-2 gap-2 lg:grid-cols-3">
-          {images.map((img, i) => (
-            <li key={img.src} className={span(i) ? "col-span-2" : ""}>
-              <Reveal delay={(i % 3) * 0.06}>
-                <div
-                  className={`relative overflow-hidden rounded-lg ${img.fit === "cover" ? "bg-mist" : "bg-white"} ${
-                    span(i) ? "aspect-square lg:aspect-[2/1]" : "aspect-square"
-                  }`}
-                >
-                  <Image
-                    src={img.src}
-                    alt={`${product.name} ${i + 1}`}
-                    fill
-                    sizes={span(i) ? "(min-width: 1024px) 66vw, 100vw" : "(min-width: 1024px) 33vw, 50vw"}
-                    className={img.fit === "cover" ? "object-cover" : "object-contain"}
-                  />
-                </div>
-              </Reveal>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Lineup and where to buy */}
-      <div className="pt-16 lg:pt-24">
-        <Purchase product={product} variants={variants} cover={images[0]} t={t} catalog={catalog} shopT={shopT} lang={lang} />
-      </div>
+          </div>
+        </section>
+      </ProductSelection>
 
       {/* Story */}
       <section aria-labelledby="story-title" className="mx-auto max-w-md py-24 lg:py-24">
@@ -202,5 +207,18 @@ async function ProductDetail({ params }: { params: PageProps<"/[lang]/products/[
 
       <Related products={related} t={t} catalog={catalog} lang={lang} />
     </main>
+  );
+}
+
+/** Native disclosure row (works without JavaScript), styled like Nike's product details. */
+function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="group border-t border-line">
+      <summary className="title-4 flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-ink [&::-webkit-details-marker]:hidden">
+        {title}
+        <CaretDown weight="bold" className="size-4 shrink-0 transition-transform duration-300 group-open:rotate-180" />
+      </summary>
+      <div className="body-6 pb-6 text-ink-soft">{children}</div>
+    </details>
   );
 }

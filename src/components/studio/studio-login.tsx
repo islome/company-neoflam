@@ -7,7 +7,7 @@ export function StudioLogin() {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, { error: null });
   return (
     <form action={action} className="mx-auto mt-16 flex max-w-sm flex-col gap-4">
-      <h1 className="heading-4 text-ink">3D Studio</h1>
+      <h1 className="heading-4 text-ink">Studio</h1>
       <p className="body-6 text-ink-soft">Staff only. Enter the Studio password.</p>
       <label className="flex flex-col gap-1">
         <span className="caption-1 text-ink">Password</span>

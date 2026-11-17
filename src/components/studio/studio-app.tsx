@@ -1,22 +1,28 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { DownloadSimple, MagnifyingGlass, SignOut, Trash, UploadSimple } from "@phosphor-icons/react";
-import { colorKeys, colorSwatch, type CategoryKey, type ColorKey } from "@/data/catalog";
+import { DownloadSimple, EyeSlash, MagnifyingGlass, Plus, SignOut, Trash, UploadSimple } from "@phosphor-icons/react";
+import { colorKeys, colorSwatch, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import type { ModelRecipe, Palette, Shape, StoredModel, ViewerModel } from "@/data/models";
 import { ProductModelViewer, type ModelLabels } from "@/components/detail/product-model";
 import { createUpload, deleteModel, logout, saveModel } from "@/app/[lang]/studio/actions";
 import { buildGlb, hasLid, potHeightCm } from "@/lib/model-builder";
+import type { StudioProduct } from "@/lib/products";
+import { ProductForm } from "./product-form";
 
-type StudioProduct = { slug: string; name: string; category: CategoryKey; colors: ColorKey[]; image: string };
 type Props = {
   products: StudioProduct[];
   models: Record<string, StoredModel>;
   canSave: boolean;
   viewerLabels: ModelLabels & { tab: string; show: string };
   colorNames: Record<ColorKey, string>;
+  categoryNames: Record<CategoryKey, string>;
+  featureNames: Record<FeatureKey, string>;
 };
+
+const NEW = "__new__";
 
 const STATUS: Record<StoredModel["source"] | "none", { label: string; className: string }> = {
   builtin: { label: "Built-in recipe", className: "bg-mist text-ink" },
@@ -25,9 +31,16 @@ const STATUS: Record<StoredModel["source"] | "none", { label: string; className:
   none: { label: "No 3D model", className: "bg-[#fbeaea] text-brand" },
 };
 
-export function StudioApp({ products, models, canSave, viewerLabels, colorNames }: Props) {
+export function StudioApp({ products, models, canSave, viewerLabels, colorNames, categoryNames, featureNames }: Props) {
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(products[0]?.slug ?? "");
+  const [selected, setSelected] = useState(products[0]?.slug ?? NEW);
+  const [tab, setTab] = useState<"details" | "3d">("details");
+  const [notice, setNotice] = useState<string | null>(null);
+  const open = (slug: string, next: "details" | "3d" = tab) => {
+    setSelected(slug);
+    setTab(next);
+    setNotice(null);
+  };
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -40,9 +53,10 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames 
     <div>
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="heading-4 text-ink">3D Studio</h1>
+          <h1 className="heading-4 text-ink">Studio</h1>
           <p className="body-6 mt-1 text-ink-soft">
-            {products.length} products · {products.length - missing} with 3D · {missing} missing
+            {products.length} products · {products.filter((p) => !p.active).length} hidden · {products.length - missing} with 3D ·{" "}
+            {missing} without 3D
           </p>
         </div>
         <form action={logout}>
@@ -57,12 +71,21 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames 
 
       {!canSave && (
         <p role="status" className="caption-1 mt-4 rounded-lg bg-[#fff6e0] px-4 py-3 text-ink">
-          Supabase isn&apos;t configured here, so models can be previewed and downloaded but not saved to the site.
+          Supabase isn&apos;t configured here, so products can&apos;t be added or edited, and 3D models can be previewed and
+          downloaded but not saved.
         </p>
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside>
+          <button
+            type="button"
+            onClick={() => open(NEW, "details")}
+            aria-current={selected === NEW}
+            className="caption-1 mb-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-4 py-2.5 text-white transition-opacity duration-300 hover:opacity-80"
+          >
+            <Plus weight="bold" className="size-4" /> New product
+          </button>
           <label className="relative block">
             <span className="sr-only">Find a product</span>
             <MagnifyingGlass className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
@@ -80,7 +103,7 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames 
                 <li key={p.slug}>
                   <button
                     type="button"
-                    onClick={() => setSelected(p.slug)}
+                    onClick={() => open(p.slug)}
                     aria-current={p.slug === selected}
                     className={`flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors duration-200 ${
                       p.slug === selected ? "bg-mist" : "hover:bg-mist/60"
@@ -91,8 +114,13 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames 
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="caption-1 block truncate text-ink">{p.name}</span>
-                      <span className={`caption-5 mt-0.5 inline-block rounded-full px-2 py-0.5 ${status.className}`}>
-                        {status.label}
+                      <span className="mt-0.5 flex flex-wrap gap-1">
+                        {!p.active && (
+                          <span className="caption-5 inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-white">
+                            <EyeSlash className="size-3" /> Hidden
+                          </span>
+                        )}
+                        <span className={`caption-5 inline-block rounded-full px-2 py-0.5 ${status.className}`}>{status.label}</span>
                       </span>
                     </span>
                   </button>
@@ -102,16 +130,73 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames 
           </ul>
         </aside>
 
-        {product && (
-          <Editor
-            key={`${product.slug}:${models[product.slug]?.updatedAt ?? ""}`}
-            product={product}
-            stored={models[product.slug] ?? null}
-            canSave={canSave}
-            viewerLabels={viewerLabels}
-            colorNames={colorNames}
-          />
-        )}
+        <div className="min-w-0">
+          {notice && (
+            <p role="status" className="caption-1 mb-4 rounded-lg bg-[#e6f2ea] px-4 py-3 text-[#1f6b3a]">
+              {notice}
+            </p>
+          )}
+          {selected === NEW ? (
+            <ProductForm
+              key={NEW}
+              product={null}
+              canSave={canSave}
+              categoryNames={categoryNames}
+              colorNames={colorNames}
+              featureNames={featureNames}
+              onSaved={(slug, visible) => {
+                open(slug, "3d");
+                setNotice(
+                  `Product created${visible ? " and live in the shop" : " (hidden from the shop for now)"}. Now give it a 3D model, or switch to Details to keep editing.`,
+                );
+              }}
+            />
+          ) : (
+            product && (
+              <>
+                <div role="tablist" aria-label={product.name} className="mb-5 inline-flex rounded-full bg-mist p-1">
+                  {(
+                    [
+                      ["details", "Details"],
+                      ["3d", "3D model"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      key={key}
+                      role="tab"
+                      type="button"
+                      aria-selected={tab === key}
+                      onClick={() => setTab(key)}
+                      className={`caption-1 rounded-full px-4 py-2 transition-colors duration-200 ${tab === key ? "bg-white text-ink shadow-sm" : "text-ink-soft"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {tab === "details" ? (
+                  <ProductForm
+                    key={product.slug}
+                    product={product}
+                    canSave={canSave && product.inDatabase}
+                    categoryNames={categoryNames}
+                    colorNames={colorNames}
+                    featureNames={featureNames}
+                    onSaved={() => setNotice(null)}
+                  />
+                ) : (
+                  <Editor
+                    key={`${product.slug}:${models[product.slug]?.updatedAt ?? ""}`}
+                    product={product}
+                    stored={models[product.slug] ?? null}
+                    canSave={canSave}
+                    viewerLabels={viewerLabels}
+                    colorNames={colorNames}
+                  />
+                )}
+              </>
+            )
+          )}
+        </div>
       </div>
     </div>
   );
@@ -139,6 +224,7 @@ function Editor({ product, stored, canSave, viewerLabels, colorNames }: EditorPr
   const [uploadLid, setUploadLid] = useState<string | null>(stored?.source === "upload" ? (stored.lidAnimation ?? null) : null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const router = useRouter();
 
   // Rebuild the recipe preview shortly after each change.
   useEffect(() => {
@@ -217,6 +303,7 @@ function Editor({ product, stored, canSave, viewerLabels, colorNames }: EditorPr
       );
       if (!saved.ok) throw new Error(saved.error);
       setMessage({ tone: "ok", text: "Saved. The 3D tab on the product page now shows this model." });
+      router.refresh();
     } catch (e) {
       setMessage({ tone: "error", text: e instanceof Error ? e.message : "Save failed." });
     } finally {
@@ -230,6 +317,7 @@ function Editor({ product, stored, canSave, viewerLabels, colorNames }: EditorPr
     const r = await deleteModel(product.slug);
     setBusy(false);
     setMessage(r.ok ? { tone: "ok", text: "Removed." } : { tone: "error", text: r.error });
+    if (r.ok) router.refresh();
   };
 
   const pick = async (file: File | undefined) => {

@@ -15,9 +15,19 @@ export type ModelLabels = {
   ar: string;
   color: string;
   loading: string;
+  arOpen?: string;
+  arUnsupported?: string;
 };
 
-type Props = { model: ViewerModel; labels: ModelLabels; colorNames: Record<ColorKey, string> };
+type Props = {
+  model: ViewerModel;
+  labels: ModelLabels;
+  colorNames: Record<ColorKey, string>;
+  /** Colour chosen outside the viewer (the product page's swatches). Hides the viewer's own swatches. */
+  color?: ColorKey | null;
+  /** AR mode: offer a big "open camera" button instead of the corner AR chip. */
+  arPrompt?: boolean;
+};
 
 const LID_SECONDS = 1.2;
 
@@ -26,13 +36,15 @@ const LID_SECONDS = 1.2;
  * open the lid, and place it in your kitchen with AR on supported phones.
  * The <model-viewer> library loads only when this component mounts (the gallery's 3D tab).
  */
-export function ProductModelViewer({ model, labels, colorNames }: Props) {
+export function ProductModelViewer({ model, labels, colorNames, color: chosen, arPrompt }: Props) {
+  const controlled = chosen !== undefined;
   const ref = useRef<ModelViewerElement>(null);
   const reduce = useReducedMotion();
   const [ready, setReady] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [color, setColor] = useState(model.colors[0]?.key);
   const [lidOpen, setLidOpen] = useState(false);
+  const [canAR, setCanAR] = useState(false);
   const frame = useRef(0);
 
   useEffect(() => {
@@ -55,6 +67,7 @@ export function ProductModelViewer({ model, labels, colorNames }: Props) {
         el.pause();
         el.currentTime = 0;
       }
+      setCanAR(el.canActivateAR);
       setLoaded(true);
     };
     // A cached model can finish loading before this effect subscribes.
@@ -72,6 +85,12 @@ export function ProductModelViewer({ model, labels, colorNames }: Props) {
     }
     setColor(key);
   };
+
+  // Follow the colour picked on the page once the model is ready.
+  useEffect(() => {
+    if (loaded && chosen && chosen !== color) paint(chosen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, chosen]);
 
   // Scrub the lid animation toward open or closed, so it can reverse mid-way.
   const toggleLid = () => {
@@ -121,7 +140,7 @@ export function ProductModelViewer({ model, labels, colorNames }: Props) {
           style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
         >
           {/* model-viewer shows this only on devices that support AR. */}
-          <button slot="ar-button" type="button" className={`${chip} absolute top-4 right-4`}>
+          <button slot="ar-button" type="button" className={`${chip} absolute top-4 right-4 ${arPrompt ? "hidden" : ""}`}>
             <Cube weight="bold" className="size-4" />
             {labels.ar}
           </button>
@@ -134,15 +153,32 @@ export function ProductModelViewer({ model, labels, colorNames }: Props) {
         </p>
       )}
 
+      {loaded && arPrompt && (
+        <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2 text-center">
+          {canAR ? (
+            <button type="button" onClick={() => ref.current?.activateAR()} className={`${chip} px-6 py-3`}>
+              <Cube weight="bold" className="size-5" />
+              {labels.arOpen ?? labels.ar}
+            </button>
+          ) : (
+            <p className="caption-1 rounded-full bg-white/90 px-4 py-2 text-ink">{labels.arUnsupported}</p>
+          )}
+        </div>
+      )}
+
       {loaded && (
         <>
-          <p className="caption-5 pointer-events-none absolute top-4 left-4 inline-flex items-center gap-1 text-ink-soft">
+          <p
+            className={`caption-5 pointer-events-none absolute left-4 inline-flex items-center gap-1 text-ink-soft ${
+              controlled ? "bottom-6" : "top-4"
+            }`}
+          >
             <HandGrabbing weight="bold" className="size-4" />
             {labels.hint}
           </p>
 
           <div className="absolute inset-x-4 bottom-4 flex flex-wrap items-center justify-between gap-3">
-            {model.colors.length > 1 && model.paint.length > 0 && (
+            {!controlled && model.colors.length > 1 && model.paint.length > 0 && (
               <div className="flex gap-2 rounded-full bg-white p-1.5 shadow-[0_2px_8px_rgba(20,20,20,0.12)]">
                 {model.colors.map((c) => (
                   <button
