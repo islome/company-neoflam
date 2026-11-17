@@ -23,12 +23,21 @@ const en: Dictionary = {
   },
   hero: {
     eyebrow: "Neoflam Uzbekistan · Official branch",
-    titleLines: ["The healthy Korean kitchen", "is now in Uzbekistan"],
+    titleLines: ["Healthy kitchen,", "happy life"],
     subtitle:
       "Pots and pans without harmful substances, made from natural materials. Cook healthy, beautiful meals every day.",
     cta: "Our products",
     proof: "FIKA Objet Comfort · 2025 German Design Award winner",
-    kinetic: "HEALTHY",
+    /** Word inside titleLines shown in bold brand red. */
+    accent: "happy",
+    /** Alt text for each hero slide, in slide order. */
+    imageAlts: [
+      "FIKA set: stockpot, grill pan and deep frying pan",
+      "FIKA set: two stockpots, a saucepan, frying pans and a square egg pan",
+      "FIKA set: wok, stockpot, saucepan, square egg pan and grill pan",
+      "Pink Neoflam pots and pans set",
+    ],
+    showSlide: "Show photo {n}",
   },
   products: {
     title: "Our products",
