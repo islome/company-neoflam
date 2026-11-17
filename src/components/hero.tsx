@@ -127,7 +127,10 @@ export function Hero({ hero, videoUrl, lang }: Props) {
                       alt={hero.imageAlts[i]}
                       width={slide.width}
                       height={slide.height}
-                      preload={i === 0}
+                      // Every slide is above the fold and any of them can become the LCP,
+                      // so load them all right away; the first one gets fetch priority.
+                      loading="eager"
+                      fetchPriority={i === 0 ? "high" : undefined}
                       sizes="(min-width: 640px) 460px, 100vw"
                       // Feather the edges so the photo melts into the matching section background.
                       className="hero-photo-fade size-full object-contain"
