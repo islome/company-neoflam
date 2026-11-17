@@ -28,14 +28,15 @@ export function ProductCard({
   return (
     <article className="group">
       <Link href={`/${lang}/products/${product.slug}`} prefetch className="block">
-        <div className="relative aspect-square overflow-hidden bg-mist">
+        {/* Silver product backdrop (#ebebeb, also used in the product gallery): white photo backgrounds blend into it. */}
+        <div className="relative isolate aspect-square overflow-hidden bg-[#ebebeb]">
           <Image
             src={product.image}
             alt={product.name}
             fill
             preload={preload}
             sizes="(min-width: 1024px) 30vw, 50vw"
-            className="object-cover"
+            className="object-cover mix-blend-multiply"
           />
         </div>
         <div className="flex flex-col gap-1 pt-3">

@@ -8,10 +8,12 @@ import { useSyncExternalStore } from "react";
  */
 
 export type BagItem = {
-  /** slug plus variant index, so two sizes of one collection are separate lines. */
+  /** slug plus variant index (and colour), so two sizes or colours of one collection are separate lines. */
   id: string;
   slug: string;
   variant: number | null;
+  /** Colour chosen on the product page, when the product comes in several. */
+  color?: string;
   qty: number;
 };
 
@@ -86,15 +88,16 @@ const getSnapshot = () => {
 /** null on the server and during hydration, so pages can show a skeleton instead of a false "empty". */
 const getServerSnapshot = () => null;
 
-export const itemId = (slug: string, variant: number | null) => `${slug}:${variant ?? "-"}`;
+export const itemId = (slug: string, variant: number | null, color?: string) =>
+  `${slug}:${variant ?? "-"}${color ? `:${color}` : ""}`;
 
 export const shop = {
-  add(slug: string, variant: number | null, info: Omit<AddedInfo, "at">) {
-    const id = itemId(slug, variant);
+  add(slug: string, variant: number | null, info: Omit<AddedInfo, "at">, color?: string) {
+    const id = itemId(slug, variant, color);
     const existing = state.bag.find((i) => i.id === id);
     const bag = existing
       ? state.bag.map((i) => (i.id === id ? { ...i, qty: Math.min(MAX_QTY, i.qty + 1) } : i))
-      : [...state.bag, { id, slug, variant, qty: 1 }];
+      : [...state.bag, { id, slug, variant, ...(color ? { color } : {}), qty: 1 }];
     commit({ ...state, bag, lastAdded: { ...info, at: Date.now() } });
   },
   setQty(id: string, qty: number) {

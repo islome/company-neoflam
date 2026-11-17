@@ -38,13 +38,17 @@ Without Supabase keys the store list comes from `src/config/site.ts`.
 1. Create a project, then run the SQL in `supabase/migrations/` (SQL editor or `supabase db push`). Edit store rows in the table editor; the site picks them up within an hour.
 2. Set `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and in Vercel.
 
-## 3D models and the 3D Studio
+## Studio: products and 3D models
+
+**Products** live in the Supabase `products` table (the 18 built-in ones were copied there; `src/data/catalog.ts` is now only a fallback if Supabase is unreachable). Add, edit, re-order photos for, or hide a product in the **Studio** at `/en/studio` → **New product** / **Details**. Photos upload to the `product-images` bucket. Saving updates the shop immediately. To regenerate the copy SQL: `node scripts/products-seed-sql.mjs`.
+
+### 3D models
 
 Product pages have a "3D" tab (rotate, colours, lid, AR) when a product has a model.
 
 - **Built-in models** are size-and-colour recipes in `src/data/models.ts`, built by `src/lib/model-builder.ts`. Run `npm run models` after editing a recipe to rebuild `public/models/*.glb`.
-- **3D Studio** at `/en/studio` (staff only) lists every product with its 3D status. Build a model from a recipe with a live preview, or upload a `.glb` made in Tripo, Meshy or a scanning app, then **Download** it or **Save to product**. A saved model overrides the built-in one and shows on the product page straight away.
-- **Setup:** set `STUDIO_PASSWORD` (without it the Studio is off), apply `supabase/migrations/20261117000000_product_models.sql` (table `product_models` and public bucket `models`), and set the Supabase keys. Without Supabase the Studio still previews and downloads, but can't save.
+- **Studio → 3D model tab** (staff only) shows every product's 3D status. Build a model from a recipe with a live preview, or upload a `.glb` made in Tripo, Meshy or a scanning app, then **Download** it or **Save to product**. A saved model overrides the built-in one and shows on the product page straight away.
+- **Setup:** set `STUDIO_PASSWORD` (without it the Studio is off), apply the SQL in `supabase/migrations/` (tables `products`, `product_models`; public buckets `models`, `product-images`), and set the Supabase keys. Without Supabase the Studio still previews and downloads, but can't save.
 
 ## Higgsfield AI hero video
 

@@ -15,6 +15,20 @@ export type CategoryKey = (typeof categoryKeys)[number];
 export const colorKeys = ["cream", "white", "yellow", "pink", "red", "black", "clear", "multi"] as const;
 export type ColorKey = (typeof colorKeys)[number];
 
+/** Product feature tags shown under the price (labels live in the dictionaries under catalog.features). */
+export const featureKeys = [
+  "pfasFree",
+  "ceramic",
+  "induction",
+  "ovenSafe",
+  "dishwasher",
+  "microwave",
+  "woodHandle",
+  "glassLid",
+  "airtight",
+] as const;
+export type FeatureKey = (typeof featureKeys)[number];
+
 /** Swatch fill for each colour filter. `clear` and `multi` get special swatches. */
 export const colorSwatch: Record<ColorKey, string> = {
   cream: "#ede3d1",
@@ -49,6 +63,10 @@ export type Product = {
   rank: number;
   /** Date the collection was added to the catalog (YYYY-MM-DD). Drives the "newest" sort. */
   addedAt: string;
+  /** Extra photos for the detail page gallery (uploaded in the Studio). */
+  gallery?: string[];
+  /** Feature tags shown under the price. */
+  features?: FeatureKey[];
 };
 
 const img = (path: string) => `https://neoflam.com/upload/product/${path}`;

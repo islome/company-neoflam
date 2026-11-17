@@ -234,6 +234,8 @@ const slides: Record<string, string[]> = {
 
 /** Cover photo first, then the collection's slides (or local photos). */
 export function galleryFor(product: Product): GalleryImage[] {
+  // Photos uploaded in the Studio take over from the built-in galleries.
+  if (product.gallery?.length) return [product.image, ...product.gallery].map(photo);
   if (local[product.slug]) return local[product.slug];
   return [photo(product.image), ...(slides[product.slug] ?? []).map(slide)];
 }

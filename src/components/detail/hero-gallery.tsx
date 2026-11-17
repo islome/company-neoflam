@@ -1,23 +1,38 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { CaretLeft, CaretRight, Cube } from "@phosphor-icons/react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Cube, CaretLeft, CaretRight, Scan } from "@phosphor-icons/react";
 import type { GalleryImage } from "@/data/gallery";
 import type { ColorKey } from "@/data/catalog";
 import type { ViewerModel } from "@/data/models";
 import { ProductModelViewer, type ModelLabels } from "./product-model";
+import { useProductSelection } from "./product-selection";
 
-type Labels = { prev: string; next: string; showImage: string };
+type Labels = { prev: string; next: string; showImage: string; photos: string };
 type Model3D = {
   model: ViewerModel;
   labels: ModelLabels & { tab: string; show: string };
   colorNames: Record<ColorKey, string>;
 };
+type Mode = "photos" | "3d" | "ar";
+
+/** True on touch-first devices (phones, tablets), where AR can work. */
+function useCoarsePointer() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia("(pointer: coarse)");
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0,
+    () => false,
+  );
+}
 
 /**
- * Thumbnail column plus a swipeable main image with arrow controls, like Nike's launch pages.
- * With `model3d`, a "3D" thumbnail swaps the main image for an interactive 3D viewer.
+ * Product stage: swipeable photos with a counter and arrows, a row of thumbnails underneath,
+ * and (when the product has a model) a Photos / 3D / AR switch on the stage.
  */
 export function HeroGallery({
   images,
@@ -31,8 +46,10 @@ export function HeroGallery({
   model3d?: Model3D;
 }) {
   const [index, setIndex] = useState(0);
-  const [show3d, setShow3d] = useState(false);
+  const [mode, setMode] = useState<Mode>("photos");
   const track = useRef<HTMLDivElement>(null);
+  const { color } = useProductSelection();
+  const touch = useCoarsePointer();
 
   // Keep the active index in sync with swipes on the track.
   useEffect(() => {
@@ -57,99 +74,128 @@ export function HeroGallery({
     root.scrollTo({ left: next * root.clientWidth, behavior: "smooth" });
   };
 
-  return (
-    <div className="flex flex-col-reverse gap-3 lg:flex-row lg:gap-4">
-      <ul className="flex shrink-0 gap-2 overflow-x-auto lg:max-h-[640px] lg:flex-col lg:overflow-y-auto lg:overflow-x-visible">
-        {images.map((img, i) => (
-          <li key={img.src} className="shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setShow3d(false);
-                go(i);
-              }}
-              aria-label={labels.showImage.replace("{n}", String(i + 1))}
-              aria-current={!show3d && i === index}
-              className={`relative block size-16 overflow-hidden rounded-md bg-white transition-opacity duration-300 ${
-                !show3d && i === index ? "opacity-100 ring-2 ring-ink ring-offset-1" : "opacity-70 hover:opacity-100"
-              }`}
-            >
-              <Image src={img.src} alt="" fill sizes="64px" className="object-cover" />
-            </button>
-          </li>
-        ))}
-        {model3d && (
-          <li className="shrink-0">
-            <button
-              type="button"
-              onClick={() => setShow3d(true)}
-              aria-label={model3d.labels.show}
-              aria-current={show3d}
-              className={`caption-1 flex size-16 flex-col items-center justify-center gap-0.5 rounded-md bg-mist text-ink transition-opacity duration-300 ${
-                show3d ? "opacity-100 ring-2 ring-ink ring-offset-1" : "opacity-70 hover:opacity-100"
-              }`}
-            >
-              <Cube weight="bold" className="size-5" />
-              {model3d.labels.tab}
-            </button>
-          </li>
-        )}
-      </ul>
+  const modes: { key: Mode; label: string; icon?: React.ReactNode }[] = model3d
+    ? [
+        { key: "photos", label: labels.photos },
+        { key: "3d", label: model3d.labels.tab, icon: <Cube weight="bold" className="size-4" /> },
+        ...(touch ? [{ key: "ar" as const, label: "AR", icon: <Scan weight="bold" className="size-4" /> }] : []),
+      ]
+    : [];
 
-      <div className="relative min-w-0 flex-1">
+  return (
+    // On desktop the photo stays pinned beside the info column while the page scrolls.
+    <div className="min-w-0 lg:sticky lg:top-28">
+      <div className="relative">
         <div
           ref={track}
           tabIndex={0}
+          aria-label={name}
           onKeyDown={(e) => {
             if (e.key === "ArrowRight") go(index + 1);
             if (e.key === "ArrowLeft") go(index - 1);
           }}
-          className="flex aspect-square snap-x snap-mandatory overflow-x-auto rounded-lg bg-mist [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex aspect-square snap-x snap-mandatory overflow-x-auto rounded-lg bg-[#ebebeb] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {images.map((img, i) => (
-            <div key={img.src} data-index={i} className="relative w-full shrink-0 snap-center">
+            <div key={img.src} data-index={i} className="relative isolate w-full shrink-0 snap-center">
               <Image
                 src={img.src}
                 alt={`${name} ${i + 1}`}
                 fill
                 preload={i === 0}
-                sizes="(min-width: 1024px) 45vw, 100vw"
-                className={img.fit === "cover" ? "object-cover" : "object-contain bg-white"}
+                sizes="(min-width: 1280px) 600px, (min-width: 1024px) 540px, 100vw"
+                // Silver backdrop: white photo backgrounds blend into the stage.
+                className={`mix-blend-multiply ${img.fit === "cover" ? "object-cover" : "object-contain"}`}
               />
             </div>
           ))}
         </div>
 
-        {model3d && show3d && (
-          <div className="absolute inset-0 overflow-hidden rounded-lg bg-mist">
-            <ProductModelViewer model={model3d.model} labels={model3d.labels} colorNames={model3d.colorNames} />
+        {model3d && mode !== "photos" && (
+          <div className="absolute inset-0 overflow-hidden rounded-lg bg-[#ebebeb]">
+            <ProductModelViewer
+              model={model3d.model}
+              labels={model3d.labels}
+              colorNames={model3d.colorNames}
+              color={color}
+              arPrompt={mode === "ar"}
+            />
           </div>
         )}
 
-        {/* Second entry point, so phones see 3D without scrolling the thumbnail row. */}
-        {model3d && !show3d && (
-          <button
-            type="button"
-            onClick={() => setShow3d(true)}
-            aria-label={model3d.labels.show}
-            className="caption-1 absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-ink shadow-[0_2px_8px_rgba(20,20,20,0.12)] transition-[opacity,transform] duration-300 hover:opacity-80 active:scale-[0.98]"
+        {modes.length > 0 && (
+          <div
+            role="tablist"
+            aria-label={model3d?.labels.show}
+            className="absolute top-4 left-4 flex gap-0.5 rounded-full border border-line bg-white p-1"
           >
-            <Cube weight="bold" className="size-4" />
-            {model3d.labels.tab}
-          </button>
+            {modes.map((m) => (
+              <button
+                key={m.key}
+                role="tab"
+                type="button"
+                aria-selected={mode === m.key}
+                onClick={() => setMode(m.key)}
+                className={`caption-1 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors duration-300 ${
+                  mode === m.key ? "bg-ink text-white" : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                {m.icon}
+                {m.label}
+              </button>
+            ))}
+          </div>
         )}
 
-        {images.length > 1 && !show3d && (
-          <div className="absolute right-4 bottom-4 flex gap-2">
-            <ArrowButton label={labels.prev} onClick={() => go(index - 1)}>
-              <CaretLeft weight="bold" className="size-4" />
-            </ArrowButton>
-            <ArrowButton label={labels.next} onClick={() => go(index + 1)}>
-              <CaretRight weight="bold" className="size-4" />
-            </ArrowButton>
-          </div>
+        {mode === "photos" && images.length > 1 && (
+          <>
+            <p className="caption-5 pointer-events-none absolute bottom-6 left-4 text-ink-soft" aria-live="polite">
+              {index + 1} / {images.length}
+            </p>
+            <div className="absolute right-4 bottom-4 flex gap-2">
+              <ArrowButton label={labels.prev} onClick={() => go(index - 1)}>
+                <CaretLeft weight="bold" className="size-4" />
+              </ArrowButton>
+              <ArrowButton label={labels.next} onClick={() => go(index + 1)}>
+                <CaretRight weight="bold" className="size-4" />
+              </ArrowButton>
+            </div>
+          </>
         )}
       </div>
+
+      {images.length > 1 && (
+        <ul className="mt-3 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {images.map((img, i) => {
+            const current = mode === "photos" && i === index;
+            return (
+              <li key={img.src} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("photos");
+                    go(i);
+                  }}
+                  aria-label={labels.showImage.replace("{n}", String(i + 1))}
+                  aria-current={current}
+                  className={`relative isolate block size-16 overflow-hidden rounded-md bg-[#ebebeb] transition-opacity duration-300 lg:size-[72px] ${
+                    current ? "opacity-100" : "opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <Image src={img.src} alt="" fill sizes="72px" className="object-cover mix-blend-multiply" />
+                  {/* Selected marker drawn inside the thumbnail, so the scrolling row can't clip it. */}
+                  <span
+                    aria-hidden
+                    className={`pointer-events-none absolute inset-0 rounded-md border-2 transition-colors duration-300 ${
+                      current ? "border-ink" : "border-transparent"
+                    }`}
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
