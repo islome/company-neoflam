@@ -38,6 +38,14 @@ Without Supabase keys the store list comes from `src/config/site.ts`.
 1. Create a project, then run the SQL in `supabase/migrations/` (SQL editor or `supabase db push`). Edit store rows in the table editor; the site picks them up within an hour.
 2. Set `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and in Vercel.
 
+## 3D models and the 3D Studio
+
+Product pages have a "3D" tab (rotate, colours, lid, AR) when a product has a model.
+
+- **Built-in models** are size-and-colour recipes in `src/data/models.ts`, built by `src/lib/model-builder.ts`. Run `npm run models` after editing a recipe to rebuild `public/models/*.glb`.
+- **3D Studio** at `/en/studio` (staff only) lists every product with its 3D status. Build a model from a recipe with a live preview, or upload a `.glb` made in Tripo, Meshy or a scanning app, then **Download** it or **Save to product**. A saved model overrides the built-in one and shows on the product page straight away.
+- **Setup:** set `STUDIO_PASSWORD` (without it the Studio is off), apply `supabase/migrations/20261117000000_product_models.sql` (table `product_models` and public bucket `models`), and set the Supabase keys. Without Supabase the Studio still previews and downloads, but can't save.
+
 ## Higgsfield AI hero video
 
 The hero shows the FIKA product photo (`public/images/hero/fika-set.webp`). To use a Higgsfield AI clip instead, upload the exported mp4/webm (for example to Supabase Storage) and set `NEXT_PUBLIC_HERO_VIDEO_URL`.

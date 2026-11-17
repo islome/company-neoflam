@@ -2,14 +2,36 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, Cube } from "@phosphor-icons/react";
 import type { GalleryImage } from "@/data/gallery";
+import type { ColorKey } from "@/data/catalog";
+import type { ViewerModel } from "@/data/models";
+import { ProductModelViewer, type ModelLabels } from "./product-model";
 
 type Labels = { prev: string; next: string; showImage: string };
+type Model3D = {
+  model: ViewerModel;
+  labels: ModelLabels & { tab: string; show: string };
+  colorNames: Record<ColorKey, string>;
+};
 
-/** Thumbnail column plus a swipeable main image with arrow controls, like Nike's launch pages. */
-export function HeroGallery({ images, name, labels }: { images: GalleryImage[]; name: string; labels: Labels }) {
+/**
+ * Thumbnail column plus a swipeable main image with arrow controls, like Nike's launch pages.
+ * With `model3d`, a "3D" thumbnail swaps the main image for an interactive 3D viewer.
+ */
+export function HeroGallery({
+  images,
+  name,
+  labels,
+  model3d,
+}: {
+  images: GalleryImage[];
+  name: string;
+  labels: Labels;
+  model3d?: Model3D;
+}) {
   const [index, setIndex] = useState(0);
+  const [show3d, setShow3d] = useState(false);
   const track = useRef<HTMLDivElement>(null);
 
   // Keep the active index in sync with swipes on the track.
@@ -42,17 +64,36 @@ export function HeroGallery({ images, name, labels }: { images: GalleryImage[]; 
           <li key={img.src} className="shrink-0">
             <button
               type="button"
-              onClick={() => go(i)}
+              onClick={() => {
+                setShow3d(false);
+                go(i);
+              }}
               aria-label={labels.showImage.replace("{n}", String(i + 1))}
-              aria-current={i === index}
+              aria-current={!show3d && i === index}
               className={`relative block size-16 overflow-hidden rounded-md bg-white transition-opacity duration-300 ${
-                i === index ? "opacity-100 ring-2 ring-ink ring-offset-1" : "opacity-70 hover:opacity-100"
+                !show3d && i === index ? "opacity-100 ring-2 ring-ink ring-offset-1" : "opacity-70 hover:opacity-100"
               }`}
             >
               <Image src={img.src} alt="" fill sizes="64px" className="object-cover" />
             </button>
           </li>
         ))}
+        {model3d && (
+          <li className="shrink-0">
+            <button
+              type="button"
+              onClick={() => setShow3d(true)}
+              aria-label={model3d.labels.show}
+              aria-current={show3d}
+              className={`caption-1 flex size-16 flex-col items-center justify-center gap-0.5 rounded-md bg-mist text-ink transition-opacity duration-300 ${
+                show3d ? "opacity-100 ring-2 ring-ink ring-offset-1" : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              <Cube weight="bold" className="size-5" />
+              {model3d.labels.tab}
+            </button>
+          </li>
+        )}
       </ul>
 
       <div className="relative min-w-0 flex-1">
@@ -79,7 +120,26 @@ export function HeroGallery({ images, name, labels }: { images: GalleryImage[]; 
           ))}
         </div>
 
-        {images.length > 1 && (
+        {model3d && show3d && (
+          <div className="absolute inset-0 overflow-hidden rounded-lg bg-mist">
+            <ProductModelViewer model={model3d.model} labels={model3d.labels} colorNames={model3d.colorNames} />
+          </div>
+        )}
+
+        {/* Second entry point, so phones see 3D without scrolling the thumbnail row. */}
+        {model3d && !show3d && (
+          <button
+            type="button"
+            onClick={() => setShow3d(true)}
+            aria-label={model3d.labels.show}
+            className="caption-1 absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-ink shadow-[0_2px_8px_rgba(20,20,20,0.12)] transition-[opacity,transform] duration-300 hover:opacity-80 active:scale-[0.98]"
+          >
+            <Cube weight="bold" className="size-4" />
+            {model3d.labels.tab}
+          </button>
+        )}
+
+        {images.length > 1 && !show3d && (
           <div className="absolute right-4 bottom-4 flex gap-2">
             <ArrowButton label={labels.prev} onClick={() => go(index - 1)}>
               <CaretLeft weight="bold" className="size-4" />

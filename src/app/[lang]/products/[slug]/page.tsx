@@ -8,6 +8,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getProducts } from "@/lib/products";
 import { galleryFor } from "@/data/gallery";
 import { variants as allVariants } from "@/data/variants";
+import { getProductModels } from "@/lib/product-models";
 import { formatPrice } from "@/components/catalog/product-card";
 import { Swatch } from "@/components/catalog/swatch";
 import { HeroGallery } from "@/components/detail/hero-gallery";
@@ -81,10 +82,11 @@ function DetailSkeleton() {
 
 async function ProductDetail({ params }: { params: PageProps<"/[lang]/products/[slug]">["params"] }) {
   const { lang, product, products } = await load(params);
-  const { detail: t, catalog, shop: shopT } = await getDictionary(lang);
+  const [{ detail: t, catalog, shop: shopT }, models] = await Promise.all([getDictionary(lang), getProductModels()]);
   const images = galleryFor(product);
   const variants = allVariants[product.slug] ?? [];
   const story = t.story[product.category];
+  const model = models[product.slug];
 
   // Same category first, then the rest of the catalog.
   const related = [
@@ -108,6 +110,13 @@ async function ProductDetail({ params }: { params: PageProps<"/[lang]/products/[
           images={images.slice(0, 6)}
           name={product.name}
           labels={{ prev: t.prev, next: t.next, showImage: t.showImage }}
+          model3d={
+            model && {
+              model,
+              labels: { ...t.model, alt: t.model.alt.replace("{name}", product.name) },
+              colorNames: catalog.colors,
+            }
+          }
         />
 
         <div className="max-w-md lg:justify-self-center">
