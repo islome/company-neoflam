@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { builtinModelSrc, recipes, type ModelRecipe, type StoredModel } from "@/data/models";
+import { builtinModelSrc, builtinUsdzSrc, recipes, type ModelRecipe, type StoredModel } from "@/data/models";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export const MODELS_TAG = "product-models";
@@ -21,6 +21,7 @@ const builtin = (slug: string, r: ModelRecipe): StoredModel => ({
   slug,
   source: "builtin",
   src: builtinModelSrc(slug),
+  iosSrc: builtinUsdzSrc(slug, r),
   recipe: r,
   colors: r.colors,
   paint: r.paint,

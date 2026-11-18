@@ -6,6 +6,7 @@
  */
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import { USDZExporter } from "three/examples/jsm/exporters/USDZExporter.js";
 import type { ModelRecipe, Palette, Shape } from "../data/models";
 
 const SEG = 96;
@@ -360,4 +361,64 @@ export async function buildGlb(recipe: ModelRecipe, name?: string): Promise<Arra
   const { scene, clips } = buildScene(recipe, name);
   const glb = await new GLTFExporter().parseAsync(scene, { binary: true, animations: clips });
   return glb as ArrayBuffer;
+}
+
+/**
+ * USDZ only has one-sided surfaces, but the thin walls here (pot shells, glass lids, pans)
+ * are single lathed sheets drawn double-sided. Give each such mesh a mirrored back face so iPhone AR
+ * shows the inside of a pot instead of seeing through it.
+ */
+function addBackFaces(root: THREE.Object3D) {
+  const meshes: THREE.Mesh[] = [];
+  root.traverse((o) => {
+    // Only lathed profiles are open sheets; spheres, tori, capsules and extrusions are closed.
+    if (o instanceof THREE.Mesh && o.geometry.type === "LatheGeometry") meshes.push(o);
+  });
+  for (const front of meshes) {
+    const geo = (front.geometry as THREE.BufferGeometry).clone();
+    const index = geo.index;
+    if (index) {
+      const a = index.array;
+      for (let i = 0; i < a.length; i += 3) [a[i + 1], a[i + 2]] = [a[i + 2], a[i + 1]];
+    } else {
+      // Swap the 2nd and 3rd vertex of every triangle in each attribute.
+      for (const attr of Object.values(geo.attributes) as THREE.BufferAttribute[]) {
+        const a = attr.array;
+        const n = attr.itemSize;
+        for (let t = 0; t < attr.count; t += 3) {
+          for (let k = 0; k < n; k++) {
+            const i1 = (t + 1) * n + k;
+            const i2 = (t + 2) * n + k;
+            [a[i1], a[i2]] = [a[i2], a[i1]];
+          }
+        }
+      }
+    }
+    const normal = geo.getAttribute("normal") as THREE.BufferAttribute | undefined;
+    if (normal) for (let i = 0; i < normal.array.length; i++) normal.array[i] = -normal.array[i];
+    const back = new THREE.Mesh(geo, front.material);
+    back.name = `${front.name}Back`;
+    back.position.copy(front.position);
+    back.quaternion.copy(front.quaternion);
+    back.scale.copy(front.scale);
+    front.parent?.add(back);
+  }
+  root.traverse((o) => {
+    if (o instanceof THREE.Mesh) (o.material as THREE.Material).side = THREE.FrontSide;
+  });
+}
+
+/**
+ * Builds a recipe into a .usdz for iPhone AR Quick Look (true size, sits on a table or floor;
+ * LiDAR iPhones place it instantly). `colorHex` repaints the recipe's colour-switch materials.
+ * The lid stays closed: Quick Look files carry no glTF animations.
+ */
+export async function buildUsdz(recipe: ModelRecipe, name?: string, colorHex?: string): Promise<ArrayBuffer> {
+  const palette: Palette = { ...recipe.palette };
+  if (colorHex) for (const key of recipe.paint) palette[key] = colorHex;
+  const { scene } = buildScene({ ...recipe, palette }, name);
+  addBackFaces(scene);
+  scene.updateMatrixWorld(true);
+  const usdz = await new USDZExporter().parseAsync(scene, { quickLookCompatible: true });
+  return (usdz as Uint8Array<ArrayBuffer>).buffer as ArrayBuffer;
 }

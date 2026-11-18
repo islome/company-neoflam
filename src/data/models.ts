@@ -74,6 +74,11 @@ export type ViewerModel = {
   /** Material names the colour switcher repaints. */
   paint: string[];
   lidAnimation?: string;
+  /**
+   * Ready-made .usdz per colour for iPhone AR Quick Look. Without it, model-viewer
+   * converts the .glb in the browser when AR opens (slower, and Safari only).
+   */
+  iosSrc?: Partial<Record<ColorKey, string>>;
 };
 
 /** A product's saved model, as listed in the Studio. */
@@ -85,6 +90,15 @@ export type StoredModel = ViewerModel & {
 };
 
 export const builtinModelSrc = (slug: string) => `/models/${slug}.glb`;
+
+/**
+ * iPhone AR files written next to the .glb by `npm run models`:
+ * <slug>.usdz in the first colour, <slug>.<colour>.usdz for the others.
+ */
+export const builtinUsdzSrc = (slug: string, recipe: ModelRecipe) =>
+  Object.fromEntries(
+    recipe.colors.map((c, i) => [c.key, `/models/${i === 0 ? slug : `${slug}.${c.key}`}.usdz`]),
+  ) as Partial<Record<ColorKey, string>>;
 
 export const recipes: Record<string, ModelRecipe> = {
   retro: {

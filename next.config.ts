@@ -20,6 +20,15 @@ const nextConfig: NextConfig = {
       ...supabaseImages,
     ],
   },
+  // iPhone AR Quick Look only opens .usdz files served with Apple's MIME type.
+  async headers() {
+    return [
+      {
+        source: "/models/:file(.*\\.usdz)",
+        headers: [{ key: "Content-Type", value: "model/vnd.usdz+zip" }],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

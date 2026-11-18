@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { Cube, HandGrabbing } from "@phosphor-icons/react";
+import { Cube, HandGrabbing, LinkSimple } from "@phosphor-icons/react";
 import type { ModelViewerElement } from "@google/model-viewer";
 import type { ViewerModel } from "@/data/models";
 import type { ColorKey } from "@/data/catalog";
@@ -17,6 +17,12 @@ export type ModelLabels = {
   loading: string;
   arOpen?: string;
   arUnsupported?: string;
+  /** Short note under the "open camera" button. */
+  arHint?: string;
+  /** iPhone in-app browsers (Telegram, Instagram…) can't open AR: ask for Safari. */
+  arSafari?: string;
+  arCopyLink?: string;
+  arCopied?: string;
 };
 
 type Props = {
@@ -32,6 +38,23 @@ type Props = {
 const LID_SECONDS = 1.2;
 
 /**
+ * How AR opens on this device. iPhone/iPad use Apple's AR Quick Look (the native AR camera,
+ * which also uses LiDAR where the phone has it). In-app browsers like Telegram's or Instagram's
+ * can't launch it, so those get a "open in Safari" note instead.
+ */
+type IosAR = "none" | "quick-look" | "in-app";
+function detectIosAR(): IosAR {
+  if (typeof navigator === "undefined") return "none";
+  const ua = navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua) || (ua.includes("Macintosh") && navigator.maxTouchPoints > 1);
+  if (!ios) return "none";
+  // Chrome, Firefox and Edge on iOS hand rel="ar" links to Quick Look too; the Google app doesn't.
+  if (/CriOS|FxiOS|EdgiOS/.test(ua)) return "quick-look";
+  if (/GSA\//.test(ua)) return "in-app";
+  return document.createElement("a").relList?.supports?.("ar") ? "quick-look" : "in-app";
+}
+
+/**
  * Interactive 3D view of a product: drag to rotate, pinch to zoom, switch body colour,
  * open the lid, and place it in your kitchen with AR on supported phones.
  * The <model-viewer> library loads only when this component mounts (the gallery's 3D tab).
@@ -45,7 +68,26 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
   const [color, setColor] = useState(model.colors[0]?.key);
   const [lidOpen, setLidOpen] = useState(false);
   const [canAR, setCanAR] = useState(false);
+  const [iosAR] = useState(detectIosAR);
+  const [copied, setCopied] = useState(false);
+  const quickLook = useRef<HTMLAnchorElement>(null);
   const frame = useRef(0);
+
+  // Ready-made .usdz for the current colour (falls back to the first colour's file).
+  const usdzColor = chosen && model.iosSrc?.[chosen] ? chosen : color;
+  const iosSrc = (usdzColor && model.iosSrc?.[usdzColor]) || (model.colors[0] && model.iosSrc?.[model.colors[0].key]);
+  // With a hosted .usdz the iPhone camera can open at once, before the 3D preview loads.
+  const nativeQuickLook = iosAR === "quick-look" && !!iosSrc;
+  const arReady = iosAR === "in-app" || nativeQuickLook || loaded;
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -137,6 +179,7 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
           ar=""
           ar-modes="webxr scene-viewer quick-look"
           ar-scale="fixed"
+          {...(iosSrc ? { "ios-src": iosSrc } : {})}
           style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
         >
           {/* model-viewer shows this only on devices that support AR. */}
@@ -147,19 +190,44 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
         </model-viewer>
       )}
 
-      {!loaded && (
+      {!loaded && !(arPrompt && arReady) && (
         <p role="status" className="caption-1 absolute inset-0 grid place-items-center text-ink-soft">
           {labels.loading}
         </p>
       )}
 
-      {loaded && arPrompt && (
-        <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2 text-center">
-          {canAR ? (
-            <button type="button" onClick={() => ref.current?.activateAR()} className={`${chip} px-6 py-3`}>
-              <Cube weight="bold" className="size-5" />
-              {labels.arOpen ?? labels.ar}
-            </button>
+      {/* Apple's AR Quick Look link: rel="ar" with an <img> as its only child opens the native AR camera. */}
+      {nativeQuickLook && (
+        <a ref={quickLook} rel="ar" href={`${iosSrc}#allowsContentScaling=0`} className="hidden" aria-hidden tabIndex={-1}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="" />
+        </a>
+      )}
+
+      {arPrompt && arReady && (
+        <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 text-center">
+          {iosAR === "in-app" ? (
+            <>
+              <p className="caption-1 max-w-72 rounded-2xl bg-white/90 px-4 py-2 text-ink">{labels.arSafari}</p>
+              <button type="button" onClick={copyLink} className={chip}>
+                <LinkSimple weight="bold" className="size-4" />
+                <span aria-live="polite">{copied ? labels.arCopied : labels.arCopyLink}</span>
+              </button>
+            </>
+          ) : nativeQuickLook || canAR ? (
+            <>
+              <button
+                type="button"
+                onClick={() => (nativeQuickLook ? quickLook.current?.click() : ref.current?.activateAR())}
+                className={`${chip} px-6 py-3`}
+              >
+                <Cube weight="bold" className="size-5" />
+                {labels.arOpen ?? labels.ar}
+              </button>
+              {labels.arHint && (
+                <p className="caption-5 max-w-64 rounded-2xl bg-white/90 px-3 py-1.5 text-ink-soft">{labels.arHint}</p>
+              )}
+            </>
           ) : (
             <p className="caption-1 rounded-full bg-white/90 px-4 py-2 text-ink">{labels.arUnsupported}</p>
           )}
@@ -197,7 +265,7 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
               </div>
             )}
             {model.lidAnimation && (
-              <button type="button" onClick={toggleLid} aria-pressed={lidOpen} className={chip}>
+              <button type="button" onClick={toggleLid} aria-pressed={lidOpen} className={`${chip} ml-auto`}>
                 {lidOpen ? labels.closeLid : labels.openLid}
               </button>
             )}
