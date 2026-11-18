@@ -19,6 +19,11 @@ function preferredLocale(request: NextRequest): Locale {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // A file that doesn't exist (/apple-touch-icon.png from iPhones, /robots.txt…) would
+  // otherwise reach [lang] with the file name as the locale and render the site's 404 from there.
+  if (/\.[^/]*$/.test(pathname)) return new NextResponse(null, { status: 404 });
+
   const hasPrefix = locales.some(
     (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`),
   );
@@ -29,6 +34,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip API routes, Next internals and any file with an extension.
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  // Skip API routes, Next internals and the real files: public/images, public/models,
+  // .well-known and the app icons. Add a new top-level public file or folder here too.
+  matcher: ["/((?!api|_next|images/|models/|\\.well-known/|favicon\\.ico|icon\\.svg).*)"],
 };
