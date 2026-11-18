@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ProductImage } from "@/components/product-image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -321,7 +321,7 @@ function Promo({ t, lang }: { t: Dictionary["catalog"]; lang: Locale }) {
         href={`/${lang}/products/retro`}
         className="group relative flex aspect-square overflow-hidden bg-mist sm:aspect-[2/1]"
       >
-        <Image
+        <ProductImage
           src={promoImage}
           alt={t.promo.alt}
           fill

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ProductImage } from "@/components/product-image";
 import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
@@ -30,7 +30,7 @@ export function ProductCard({
       <Link href={`/${lang}/products/${product.slug}`} prefetch className="block">
         {/* Silver product backdrop (#ebebeb, also used in the product gallery): white photo backgrounds blend into it. */}
         <div className="relative isolate aspect-square overflow-hidden bg-[#ebebeb]">
-          <Image
+          <ProductImage
             src={product.image}
             alt={product.name}
             fill

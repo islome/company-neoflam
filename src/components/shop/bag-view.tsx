@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ProductImage } from "@/components/product-image";
 import Link from "next/link";
 import { Handbag, Heart, Minus, Plus, Trash } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/config";
@@ -85,7 +85,7 @@ export function BagView({ products, lang, t, catalog, detail, stores, storesT }:
                         href={href}
                         className="relative size-28 shrink-0 overflow-hidden rounded-md bg-mist sm:size-36"
                       >
-                        <Image src={product.image} alt={product.name} fill sizes="144px" className="object-cover" />
+                        <ProductImage src={product.image} alt={product.name} fill sizes="144px" className="object-cover" />
                       </Link>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <div className="flex justify-between gap-4">
