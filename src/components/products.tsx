@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { ProductImage } from "@/components/product-image";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import type { Locale } from "@/i18n/config";
@@ -67,7 +67,7 @@ export function ProductCard({
     <article id={id} className="group">
       <Link href={`/${lang}/products?category=cookware`} className="block rounded-3xl" tabIndex={-1} aria-hidden>
         <div className="relative aspect-[5/4] overflow-hidden rounded-3xl bg-cream">
-          <Image
+          <ProductImage
             src={image}
             alt=""
             fill

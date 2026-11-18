@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ProductImage } from "@/components/product-image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -51,7 +51,7 @@ export function BagToast({ lang, t }: { lang: Locale; t: Dictionary["shop"] }) {
             </div>
             <div className="mt-4 flex gap-4">
               <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-mist">
-                <Image src={lastAdded.image} alt="" fill sizes="80px" className="object-cover" />
+                <ProductImage src={lastAdded.image} alt="" fill sizes="80px" className="object-cover" />
               </div>
               <div>
                 <p className="title-3 text-ink">{lastAdded.name}</p>

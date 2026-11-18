@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { ProductImage } from "@/components/product-image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Cube, CaretLeft, CaretRight, Scan } from "@phosphor-icons/react";
 import type { GalleryImage } from "@/data/gallery";
@@ -98,7 +98,7 @@ export function HeroGallery({
         >
           {images.map((img, i) => (
             <div key={img.src} data-index={i} className="relative isolate w-full shrink-0 snap-center">
-              <Image
+              <ProductImage
                 src={img.src}
                 alt={`${name} ${i + 1}`}
                 fill
@@ -182,7 +182,7 @@ export function HeroGallery({
                     current ? "opacity-100" : "opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <Image src={img.src} alt="" fill sizes="72px" className="object-cover mix-blend-multiply" />
+                  <ProductImage src={img.src} alt="" fill sizes="72px" className="object-cover mix-blend-multiply" />
                   {/* Selected marker drawn inside the thumbnail, so the scrolling row can't clip it. */}
                   <span
                     aria-hidden
