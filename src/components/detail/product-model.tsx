@@ -70,6 +70,10 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
   const [canAR, setCanAR] = useState(false);
   const [iosAR] = useState(detectIosAR);
   const [copied, setCopied] = useState(false);
+  // Set when AR opens. The page keeps rendering under the AR camera, so the preview must
+  // stop spinning or its WebGL redraws compete with AR (dropped frames, a hot phone).
+  const [arLaunched, setArLaunched] = useState(false);
+  const spin = !reduce && !arPrompt && !arLaunched;
   const quickLook = useRef<HTMLAnchorElement>(null);
   const frame = useRef(0);
 
@@ -161,7 +165,8 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
     "caption-1 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-ink shadow-[0_2px_8px_rgba(20,20,20,0.12)] transition-[opacity,transform] duration-300 hover:opacity-80 active:scale-[0.98]";
 
   return (
-    <div className="relative size-full">
+    // Touching the preview again (after coming back from AR) lets it spin again.
+    <div className="relative size-full" onPointerDown={() => setArLaunched(false)}>
       {ready && (
         <model-viewer
           ref={ref}
@@ -169,7 +174,7 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
           alt={labels.alt}
           camera-controls=""
           touch-action="pan-y"
-          {...(reduce ? {} : { "auto-rotate": "", "auto-rotate-delay": "1500", "rotation-per-second": "18deg" })}
+          {...(spin ? { "auto-rotate": "", "auto-rotate-delay": "1500", "rotation-per-second": "18deg" } : {})}
           camera-orbit="30deg 70deg auto"
           shadow-intensity="1"
           shadow-softness="0.8"
@@ -183,7 +188,11 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
           style={{ width: "100%", height: "100%", backgroundColor: "transparent" }}
         >
           {/* model-viewer shows this only on devices that support AR. */}
-          <button slot="ar-button" type="button" className={`${chip} absolute top-4 right-4 ${arPrompt ? "hidden" : ""}`}>
+          <button
+            slot="ar-button"
+            type="button"
+            onClick={() => setArLaunched(true)}
+            className={`${chip} absolute top-4 right-4 ${arPrompt ? "hidden" : ""}`}>
             <Cube weight="bold" className="size-4" />
             {labels.ar}
           </button>
@@ -218,7 +227,11 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
             <>
               <button
                 type="button"
-                onClick={() => (nativeQuickLook ? quickLook.current?.click() : ref.current?.activateAR())}
+                onClick={() => {
+                  setArLaunched(true);
+                  if (nativeQuickLook) quickLook.current?.click();
+                  else ref.current?.activateAR();
+                }}
                 className={`${chip} px-6 py-3`}
               >
                 <Cube weight="bold" className="size-5" />
