@@ -24,20 +24,37 @@ export function ProductCard({
 }) {
   const colorLabel =
     product.colors.length === 1 ? t.colorOne : t.colorMany.replace("{n}", String(product.colors.length));
+  // Nike-style hover: the first extra Studio photo replaces the main one while the card is hovered.
+  const hoverImage = product.gallery?.find((src) => src && src !== product.image);
 
   return (
     <article className="group">
       <Link href={`/${lang}/products/${product.slug}`} prefetch className="block">
         {/* Silver product backdrop (#ebebeb, also used in the product gallery): white photo backgrounds blend into it. */}
         <div className="relative isolate aspect-square overflow-hidden bg-[#ebebeb]">
-          <ProductImage
-            src={product.image}
-            alt={product.name}
-            fill
-            preload={preload}
-            sizes="(min-width: 1024px) 30vw, 50vw"
-            className="object-cover mix-blend-multiply"
-          />
+          {/* Swap with `visibility`, not opacity: opacity < 1 would cut the photo off from the
+              multiply blend. Tailwind's hover only fires on devices that can hover, so phones keep the main photo. */}
+          <span className={hoverImage ? "absolute inset-0 group-hover:invisible" : "absolute inset-0"}>
+            <ProductImage
+              src={product.image}
+              alt={product.name}
+              fill
+              preload={preload}
+              sizes="(min-width: 1024px) 30vw, 50vw"
+              className="object-cover mix-blend-multiply"
+            />
+          </span>
+          {hoverImage && (
+            <span aria-hidden className="invisible absolute inset-0 group-hover:visible">
+              <ProductImage
+                src={hoverImage}
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 30vw, 50vw"
+                className="object-cover mix-blend-multiply"
+              />
+            </span>
+          )}
         </div>
         <div className="flex flex-col gap-1 pt-3">
           <h3 className="title-3 text-ink">{product.name}</h3>
