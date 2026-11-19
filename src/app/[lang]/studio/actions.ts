@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { categoryKeys, colorKeys, featureKeys, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import type { ModelRecipe } from "@/data/models";
+import { variantTypes, type Variant } from "@/data/variants";
 import { getStudioProducts } from "@/lib/products";
 import { MODELS_BUCKET, MODELS_TAG } from "@/lib/product-models";
 import { requireStudio, signIn, signOut } from "@/lib/studio-auth";
@@ -38,15 +39,28 @@ const fail = (e: unknown): { ok: false; error: string } => ({
   error: e instanceof Error ? e.message : "Something went wrong.",
 });
 
-/** Step 1 of saving: a one-time URL the browser uploads the .glb to directly (no size limit on our server). */
-export async function createUpload(slug: string): Promise<Result<{ path: string; signedUrl: string }>> {
+type Slot = { path: string; signedUrl: string };
+
+/**
+ * Step 1 of saving: one-time URLs the browser uploads the .glb and its iPhone AR (.usdz)
+ * files to directly (no size limit on our server).
+ */
+export async function createModelUploads(slug: string, arFiles: number): Promise<Result<{ glb: Slot; usdz: Slot[] }>> {
   try {
     await requireStudio();
     await checkSlug(slug);
-    const path = `${slug}/${Date.now()}.glb`;
-    const { data, error } = await storage().storage.from(MODELS_BUCKET).createSignedUploadUrl(path);
-    if (error || !data) throw new Error(error?.message ?? "Could not start the upload.");
-    return { ok: true, path: data.path, signedUrl: data.signedUrl };
+    const count = Math.round(Number(arFiles));
+    if (!Number.isFinite(count) || count < 0 || count > 8) throw new Error("Too many AR files.");
+    const stamp = Date.now();
+    const bucket = storage().storage.from(MODELS_BUCKET);
+    const slot = async (path: string): Promise<Slot> => {
+      const { data, error } = await bucket.createSignedUploadUrl(path);
+      if (error || !data) throw new Error(error?.message ?? "Could not start the upload.");
+      return { path: data.path, signedUrl: data.signedUrl };
+    };
+    const glb = await slot(`${slug}/${stamp}.glb`);
+    const usdz = await Promise.all(Array.from({ length: count }, (_, i) => slot(`${slug}/${stamp}-${i}.usdz`)));
+    return { ok: true, glb, usdz };
   } catch (e) {
     return fail(e);
   }
@@ -60,12 +74,20 @@ export type SaveInput = {
   colors: { key: ColorKey; hex: string }[];
   paint: string[];
   lidAnimation: string | null;
+  /** iPhone AR file per colour key ("default" when the model has no colour options). */
+  usdz: Record<string, string>;
 };
 
+const ownFile = (slug: string, path: unknown, ext: string) =>
+  typeof path === "string" && path.startsWith(`${slug}/`) && path.endsWith(ext) && !path.includes("..");
+
 function clean(input: SaveInput) {
-  if (!input.path.startsWith(`${input.slug}/`) || !input.path.endsWith(".glb") || input.path.includes("..")) {
-    throw new Error("Invalid file path.");
-  }
+  if (!ownFile(input.slug, input.path, ".glb")) throw new Error("Invalid file path.");
+  const usdz = Object.fromEntries(
+    Object.entries(input.usdz && typeof input.usdz === "object" ? input.usdz : {}).filter(
+      ([key, path]) => (key === "default" || colorKeys.includes(key as ColorKey)) && ownFile(input.slug, path, ".usdz"),
+    ),
+  );
   if (input.source !== "recipe" && input.source !== "upload") throw new Error("Invalid source.");
   const colors = (Array.isArray(input.colors) ? input.colors : []).slice(0, 8).filter(
     (c) => colorKeys.includes(c?.key) && /^#[0-9a-f]{6}$/i.test(c?.hex ?? ""),
@@ -76,17 +98,21 @@ function clean(input: SaveInput) {
   const lid = typeof input.lidAnimation === "string" && input.lidAnimation.length <= 60 ? input.lidAnimation : null;
   const recipe = input.source === "recipe" ? input.recipe : null;
   if (recipe && JSON.stringify(recipe).length > 10_000) throw new Error("Recipe is too large.");
-  return { colors, paint, lid, recipe };
+  return { colors, paint, lid, recipe, usdz };
 }
+
+/** Every file a saved model owns in the bucket. */
+const modelFiles = (row: { storage_path: string | null; usdz: Record<string, string> | null } | null) =>
+  row ? [row.storage_path, ...Object.values(row.usdz ?? {})].filter((p): p is string => !!p) : [];
 
 /** Step 2 of saving: records the uploaded file on the product and refreshes product pages. */
 export async function saveModel(input: SaveInput): Promise<Result> {
   try {
     await requireStudio();
     await checkSlug(input.slug);
-    const { colors, paint, lid, recipe } = clean(input);
+    const { colors, paint, lid, recipe, usdz } = clean(input);
     const db = storage();
-    const { data: previous } = await db.from("product_models").select("storage_path").eq("slug", input.slug).maybeSingle();
+    const { data: previous } = await db.from("product_models").select("storage_path, usdz").eq("slug", input.slug).maybeSingle();
     const url = db.storage.from(MODELS_BUCKET).getPublicUrl(input.path).data.publicUrl;
     const { error } = await db.from("product_models").upsert({
       slug: input.slug,
@@ -97,12 +123,13 @@ export async function saveModel(input: SaveInput): Promise<Result> {
       colors,
       paint,
       lid_animation: lid,
+      usdz,
       updated_at: new Date().toISOString(),
     });
     if (error) throw new Error(error.message);
-    if (previous?.storage_path && previous.storage_path !== input.path) {
-      await db.storage.from(MODELS_BUCKET).remove([previous.storage_path]);
-    }
+    const keep = new Set([input.path, ...Object.values(usdz)]);
+    const stale = modelFiles(previous).filter((p) => !keep.has(p));
+    if (stale.length) await db.storage.from(MODELS_BUCKET).remove(stale);
     updateTag(MODELS_TAG);
     return { ok: true };
   } catch (e) {
@@ -110,16 +137,17 @@ export async function saveModel(input: SaveInput): Promise<Result> {
   }
 }
 
-/** Removes a saved model; the product falls back to its built-in recipe model (if any). */
+/** Removes a saved model and its files. */
 export async function deleteModel(slug: string): Promise<Result> {
   try {
     await requireStudio();
     await checkSlug(slug);
     const db = storage();
-    const { data: row } = await db.from("product_models").select("storage_path").eq("slug", slug).maybeSingle();
+    const { data: row } = await db.from("product_models").select("storage_path, usdz").eq("slug", slug).maybeSingle();
     const { error } = await db.from("product_models").delete().eq("slug", slug);
     if (error) throw new Error(error.message);
-    if (row?.storage_path) await db.storage.from(MODELS_BUCKET).remove([row.storage_path]);
+    const files = modelFiles(row);
+    if (files.length) await db.storage.from(MODELS_BUCKET).remove(files);
     updateTag(MODELS_TAG);
     return { ok: true };
   } catch (e) {
@@ -161,8 +189,25 @@ export type ProductInput = {
   tagline: { uz: string; ru: string; en: string };
   /** Main photo first. */
   photos: string[];
+  /** Sizes in the collection. */
+  variants: Variant[];
   active: boolean;
 };
+
+function cleanVariants(list: unknown): Variant[] {
+  if (!Array.isArray(list)) return [];
+  if (list.length > 30) throw new Error("Up to 30 sizes per product.");
+  return list.map((v, i) => {
+    const type = v?.type;
+    const sizeCm = Number(v?.sizeCm);
+    const volumeL = v?.volumeL === null || v?.volumeL === undefined || v?.volumeL === "" ? null : Number(v.volumeL);
+    const code = typeof v?.code === "string" && v.code.trim() ? v.code.trim().slice(0, 40) : null;
+    if (!variantTypes.includes(type)) throw new Error(`Size ${i + 1}: pick a type.`);
+    if (!Number.isFinite(sizeCm) || sizeCm <= 0 || sizeCm > 200) throw new Error(`Size ${i + 1}: enter the size in cm.`);
+    if (volumeL !== null && (!Number.isFinite(volumeL) || volumeL <= 0 || volumeL > 100)) throw new Error(`Size ${i + 1}: check the volume.`);
+    return { code, type, sizeCm, volumeL };
+  });
+}
 
 /** Photos must come from our own storage, the Neoflam global site, or the site's own /images folder. */
 function allowedPhoto(url: string) {
@@ -200,6 +245,7 @@ export async function saveProduct(input: ProductInput): Promise<Result<{ slug: s
     const photos = (input.photos ?? []).map(String).slice(0, 13);
     if (!photos.length) throw new Error("Add at least one photo.");
     if (!photos.every(allowedPhoto)) throw new Error("One of the photos has an unexpected address. Upload it again.");
+    const variants = cleanVariants(input.variants);
 
     const db = storage();
     const row = {
@@ -210,6 +256,7 @@ export async function saveProduct(input: ProductInput): Promise<Result<{ slug: s
       price_uzs: price,
       image_url: photos[0],
       gallery: photos.slice(1),
+      variants,
       tagline_uz: tagline.uz,
       tagline_ru: tagline.ru,
       tagline_en: tagline.en,
@@ -228,6 +275,41 @@ export async function saveProduct(input: ProductInput): Promise<Result<{ slug: s
     }
     updateTag(PRODUCTS_TAG);
     return { ok: true, slug };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Storage path of a photo in our product-images bucket, or null for outside photos. */
+function ownPhotoPath(url: string) {
+  const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${IMAGES_BUCKET}/`;
+  return process.env.NEXT_PUBLIC_SUPABASE_URL && url.startsWith(prefix) ? decodeURIComponent(url.slice(prefix.length)) : null;
+}
+
+/** Deletes a product for good: its row, its 3D model and AR files, and the photos uploaded for it. */
+export async function deleteProduct(slug: string): Promise<Result> {
+  try {
+    await requireStudio();
+    await checkSlug(slug);
+    const db = storage();
+    const { data: product } = await db.from("products").select("image_url, gallery").eq("slug", slug).maybeSingle();
+    const { data: model } = await db.from("product_models").select("storage_path, usdz").eq("slug", slug).maybeSingle();
+
+    // The row first: if this fails nothing is lost; leftover files after it are harmless.
+    const { error } = await db.from("products").delete().eq("slug", slug);
+    if (error) throw new Error(error.message);
+    if (model) await db.from("product_models").delete().eq("slug", slug);
+
+    const files = modelFiles(model);
+    if (files.length) await db.storage.from(MODELS_BUCKET).remove(files);
+    const photos = [product?.image_url, ...(product?.gallery ?? [])]
+      .map((u) => (typeof u === "string" ? ownPhotoPath(u) : null))
+      .filter((p): p is string => !!p);
+    if (photos.length) await db.storage.from(IMAGES_BUCKET).remove(photos);
+
+    updateTag(PRODUCTS_TAG);
+    updateTag(MODELS_TAG);
+    return { ok: true };
   } catch (e) {
     return fail(e);
   }

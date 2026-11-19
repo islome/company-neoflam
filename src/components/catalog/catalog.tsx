@@ -318,7 +318,7 @@ function Promo({ t, lang }: { t: Dictionary["catalog"]; lang: Locale }) {
       className="col-span-2"
     >
       <Link
-        href={`/${lang}/products/retro`}
+        href={`/${lang}/products?category=cookware`}
         className="group relative flex aspect-square overflow-hidden bg-mist sm:aspect-[2/1]"
       >
         <ProductImage

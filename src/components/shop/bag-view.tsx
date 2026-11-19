@@ -6,7 +6,6 @@ import { Handbag, Heart, Minus, Plus, Trash } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import type { Product } from "@/data/catalog";
-import { variants as allVariants } from "@/data/variants";
 import { MAX_BAG_QTY, shop, useShop } from "@/lib/shop-store";
 import { sizeLabel } from "@/lib/variant-label";
 import { formatPrice, ProductCard } from "@/components/catalog/product-card";
@@ -76,7 +75,7 @@ export function BagView({ products, lang, t, catalog, detail, stores, storesT }:
             ) : (
               <ul className="mt-2">
                 {lines.map(({ item, product }) => {
-                  const variant = item.variant === null ? null : (allVariants[product.slug]?.[item.variant] ?? null);
+                  const variant = item.variant === null ? null : (product.variants?.[item.variant] ?? null);
                   const href = `/${lang}/products/${product.slug}`;
                   const fav = favorites.includes(product.slug);
                   return (

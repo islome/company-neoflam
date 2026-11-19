@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, ImageSquare, Star, Trash, UploadSimple } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, ImageSquare, Plus, Star, Trash, UploadSimple } from "@phosphor-icons/react";
 import { categoryKeys, colorKeys, featureKeys, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
+import { variantTypes, type Variant, type VariantType } from "@/data/variants";
 import type { StudioProduct } from "@/lib/products";
 import { Swatch } from "@/components/catalog/swatch";
-import { createImageUpload, saveProduct } from "@/app/[lang]/studio/actions";
+import { createImageUpload, deleteProduct, saveProduct } from "@/app/[lang]/studio/actions";
 
 type Props = {
   /** null for a new product. */
@@ -16,8 +17,29 @@ type Props = {
   categoryNames: Record<CategoryKey, string>;
   colorNames: Record<ColorKey, string>;
   featureNames: Record<FeatureKey, string>;
-  onSaved: (slug: string, visible: boolean) => void;
+  variantTypeNames: Record<VariantType, string>;
+  /** `note` is set when a follow-up step (afterSave) reports something. */
+  onSaved: (slug: string, visible: boolean, note?: Note) => void;
+  /** Runs once the product row is saved (e.g. upload its 3D model). Returns a message to show. */
+  afterSave?: (slug: string, step: (text: string) => void) => Promise<string | void>;
+  /** Called with the chosen colours, so a 3D model section can follow them. */
+  onColorsChange?: (colors: ColorKey[]) => void;
+  /** Extra sections shown above the "Visible in the shop" switch. */
+  children?: React.ReactNode;
+  /** Called after the product is deleted (existing products only). */
+  onDeleted?: (slug: string) => void;
 };
+
+export type Note = { tone: "ok" | "error"; text: string };
+
+/** A size row as typed in the form (numbers stay strings until saving). */
+type SizeRow = { type: VariantType; sizeCm: string; volumeL: string; code: string };
+const toRow = (v: Variant): SizeRow => ({
+  type: v.type,
+  sizeCm: String(v.sizeCm),
+  volumeL: v.volumeL === null ? "" : String(v.volumeL),
+  code: v.code ?? "",
+});
 
 const MAX_PHOTOS = 13;
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -32,7 +54,19 @@ export const slugify = (name: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
-export function ProductForm({ product, canSave, categoryNames, colorNames, featureNames, onSaved }: Props) {
+export function ProductForm({
+  product,
+  canSave,
+  categoryNames,
+  colorNames,
+  featureNames,
+  variantTypeNames,
+  onSaved,
+  afterSave,
+  onColorsChange,
+  children,
+  onDeleted,
+}: Props) {
   const isNew = product === null;
   const [name, setName] = useState(product?.name ?? "");
   const [slug, setSlug] = useState(product?.slug ?? "");
@@ -43,11 +77,14 @@ export function ProductForm({ product, canSave, categoryNames, colorNames, featu
   const [price, setPrice] = useState(product?.price != null ? String(product.price) : "");
   const [tagline, setTagline] = useState(product?.tagline ?? { uz: "", ru: "", en: "" });
   const [photos, setPhotos] = useState<string[]>(product ? [product.image, ...(product.gallery ?? [])] : []);
+  const [sizes, setSizes] = useState<SizeRow[]>((product?.variants ?? []).map(toRow));
   const [active, setActive] = useState(product?.active ?? true);
   const [uploading, setUploading] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<Note | null>(null);
   const router = useRouter();
+
+  useEffect(() => onColorsChange?.(colors), [colors, onColorsChange]);
 
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -96,15 +133,55 @@ export function ProductForm({ product, canSave, categoryNames, colorNames, featu
       price: price.trim() === "" ? null : Number(price),
       tagline,
       photos,
+      variants: sizes.map((r) => ({
+        type: r.type,
+        sizeCm: Number(r.sizeCm),
+        volumeL: r.volumeL.trim() === "" ? null : Number(r.volumeL),
+        code: r.code.trim() || null,
+      })),
       active,
     });
+    if (!result.ok) {
+      setBusy(false);
+      setMessage({ tone: "error", text: result.error });
+      return;
+    }
+    let note: Note = {
+      tone: "ok",
+      text: active ? "Saved. The shop shows the changes now." : "Saved. This product is hidden from the shop.",
+    };
+    if (afterSave) {
+      try {
+        const extra = await afterSave(result.slug, (text) => setMessage({ tone: "ok", text }));
+        if (extra) note = { tone: "ok", text: `${note.text} ${extra}` };
+      } catch (e) {
+        note = {
+          tone: "error",
+          text: `The product was saved, but its 3D model wasn't: ${e instanceof Error ? e.message : e}. Add the model from the product's 3D tab in the Studio.`,
+        };
+      }
+    }
+    setBusy(false);
+    setMessage(note);
+    onSaved(result.slug, active, note);
+    router.refresh();
+  };
+
+  const remove = async () => {
+    if (!product) return;
+    const ok = confirm(
+      `Delete ${product.name}? This removes the product from the shop and the Studio, with its photos and 3D model. It can't be undone.`,
+    );
+    if (!ok) return;
+    setBusy(true);
+    setMessage(null);
+    const result = await deleteProduct(product.slug);
     setBusy(false);
     if (!result.ok) {
       setMessage({ tone: "error", text: result.error });
       return;
     }
-    setMessage({ tone: "ok", text: active ? "Saved. The shop shows the changes now." : "Saved. This product is hidden from the shop." });
-    onSaved(result.slug, active);
+    onDeleted?.(product.slug);
     router.refresh();
   };
 
@@ -281,6 +358,79 @@ export function ProductForm({ product, canSave, categoryNames, colorNames, featu
         </ul>
       </fieldset>
 
+      <fieldset className="mt-5">
+        <legend className="caption-5 text-ink-soft">Sizes in this collection (shown as size buttons on the product page)</legend>
+        {sizes.length > 0 && (
+          <ul className="mt-2 flex flex-col gap-2">
+            {sizes.map((row, i) => {
+              const set = (patch: Partial<SizeRow>) => setSizes((list) => list.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+              return (
+                <li key={i} className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))_auto]">
+                  <select
+                    value={row.type}
+                    onChange={(e) => set({ type: e.target.value as VariantType })}
+                    aria-label={`Size ${i + 1} type`}
+                    className={inputClass}
+                  >
+                    {variantTypes.map((t) => (
+                      <option key={t} value={t}>
+                        {variantTypeNames[t]}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={1}
+                    step={0.5}
+                    inputMode="decimal"
+                    placeholder="Size, cm"
+                    aria-label={`Size ${i + 1} in cm`}
+                    value={row.sizeCm}
+                    onChange={(e) => set({ sizeCm: e.target.value })}
+                    className={inputClass}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.1}
+                    inputMode="decimal"
+                    placeholder="Volume, L"
+                    aria-label={`Size ${i + 1} volume in litres (optional)`}
+                    value={row.volumeL}
+                    onChange={(e) => set({ volumeL: e.target.value })}
+                    className={inputClass}
+                  />
+                  <input
+                    placeholder="Code (optional)"
+                    maxLength={40}
+                    aria-label={`Size ${i + 1} model code (optional)`}
+                    value={row.code}
+                    onChange={(e) => set({ code: e.target.value })}
+                    className={inputClass}
+                  />
+                  <IconButton label={`Remove size ${i + 1}`} onClick={() => setSizes((list) => list.filter((_, j) => j !== i))}>
+                    <Trash className="size-4" />
+                  </IconButton>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {sizes.length < 30 && (
+          <button
+            type="button"
+            onClick={() =>
+              setSizes((list) => [...list, { type: list.at(-1)?.type ?? variantTypes[0], sizeCm: "", volumeL: "", code: "" }])
+            }
+            className="caption-1 mt-2 inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-ink hover:bg-mist"
+          >
+            <Plus weight="bold" className="size-3.5" /> Add size
+          </button>
+        )}
+      </fieldset>
+
+      {children}
+
       <label className="mt-5 inline-flex cursor-pointer items-center gap-3">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="size-4 accent-[#141414]" />
         <span className="caption-1 text-ink">Visible in the shop</span>
@@ -290,6 +440,16 @@ export function ProductForm({ product, canSave, categoryNames, colorNames, featu
         <button type="button" onClick={save} disabled={!canSave || busy || uploading > 0} className={primaryButton}>
           {busy ? "Saving…" : isNew ? "Create product" : "Save changes"}
         </button>
+        {!isNew && canSave && (
+          <button
+            type="button"
+            onClick={remove}
+            disabled={busy || uploading > 0}
+            className="caption-1 inline-flex items-center gap-2 rounded-full border border-brand/40 px-5 py-2.5 text-brand transition-colors duration-300 hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:ml-auto"
+          >
+            <Trash weight="bold" className="size-4" /> Delete product
+          </button>
+        )}
         {!canSave && <p className="caption-5 text-ink-soft">Connect Supabase to add or edit products.</p>}
       </div>
       {message && (

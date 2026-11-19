@@ -6,7 +6,6 @@ import { Heart } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import type { Product } from "@/data/catalog";
-import { variants as allVariants } from "@/data/variants";
 import { shop, useShop } from "@/lib/shop-store";
 import { ProductCard } from "@/components/catalog/product-card";
 
@@ -61,7 +60,7 @@ export function FavoritesView({ products, lang, t, catalog }: Props) {
         <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-12 lg:grid-cols-3">
           <AnimatePresence mode="popLayout" initial={false}>
             {items.map((p) => {
-              const hasSizes = (allVariants[p.slug]?.length ?? 0) > 0;
+              const hasSizes = (p.variants?.length ?? 0) > 0;
               return (
                 <motion.li
                   key={p.slug}

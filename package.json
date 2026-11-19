@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "models": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-models.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "@google/model-viewer": "^4.4.0",

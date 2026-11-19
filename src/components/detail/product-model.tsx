@@ -79,7 +79,10 @@ export function ProductModelViewer({ model, labels, colorNames, color: chosen, a
 
   // Ready-made .usdz for the current colour (falls back to the first colour's file).
   const usdzColor = chosen && model.iosSrc?.[chosen] ? chosen : color;
-  const iosSrc = (usdzColor && model.iosSrc?.[usdzColor]) || (model.colors[0] && model.iosSrc?.[model.colors[0].key]);
+  const iosSrc =
+    (usdzColor && model.iosSrc?.[usdzColor]) ||
+    (model.colors[0] && model.iosSrc?.[model.colors[0].key]) ||
+    model.iosSrc?.default;
   // With a hosted .usdz the iPhone camera can open at once, before the 3D preview loads.
   const nativeQuickLook = iosAR === "quick-look" && !!iosSrc;
   const arReady = iosAR === "in-app" || nativeQuickLook || loaded;

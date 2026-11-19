@@ -6,7 +6,6 @@ import { hasLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getProducts } from "@/lib/products";
 import { galleryFor } from "@/data/gallery";
-import { variants as allVariants } from "@/data/variants";
 import { getProductModels } from "@/lib/product-models";
 import { formatPrice } from "@/components/catalog/product-card";
 import { Swatch } from "@/components/catalog/swatch";
@@ -86,7 +85,7 @@ async function ProductDetail({ params }: { params: PageProps<"/[lang]/products/[
   const { lang, product, products } = await load(params);
   const [{ detail: t, catalog, shop: shopT }, models] = await Promise.all([getDictionary(lang), getProductModels()]);
   const images = galleryFor(product);
-  const variants = allVariants[product.slug] ?? [];
+  const variants = product.variants ?? [];
   const story = t.story[product.category];
   const model = models[product.slug];
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { products as fallbackProducts, type Product } from "@/data/catalog";
+import type { Product } from "@/data/catalog";
+import type { Variant } from "@/data/variants";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 type ProductRow = {
@@ -17,11 +18,12 @@ type ProductRow = {
   added_at: string;
   gallery: string[] | null;
   features: Product["features"] | null;
+  variants: Variant[] | null;
   is_active: boolean;
 };
 
 const COLUMNS =
-  "slug, name, category, colors, price_uzs, image_url, tagline_uz, tagline_ru, tagline_en, sort_order, added_at, gallery, features, is_active";
+  "slug, name, category, colors, price_uzs, image_url, tagline_uz, tagline_ru, tagline_en, sort_order, added_at, gallery, features, variants, is_active";
 
 const toProduct = (r: ProductRow): Product => ({
   slug: r.slug,
@@ -35,19 +37,17 @@ const toProduct = (r: ProductRow): Product => ({
   addedAt: r.added_at,
   gallery: r.gallery ?? [],
   features: r.features ?? [],
+  variants: r.variants ?? [],
 });
 
-/**
- * Product catalog. Reads the Supabase `products` table when configured and
- * non empty, otherwise uses src/data/catalog.ts.
- */
+/** The product catalog: active products from the Supabase `products` table (added in the Studio). */
 export async function getProducts(): Promise<Product[]> {
   "use cache";
   cacheLife("hours");
   cacheTag("products");
 
   const supabase = getSupabaseAdmin();
-  if (!supabase) return fallbackProducts;
+  if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("products")
@@ -55,26 +55,20 @@ export async function getProducts(): Promise<Product[]> {
     .eq("is_active", true)
     .order("sort_order");
 
-  if (error || !data?.length) {
-    if (error) console.error("[products] Supabase query failed:", error.message);
-    return fallbackProducts;
+  if (error) {
+    console.error("[products] Supabase query failed:", error.message);
+    return [];
   }
-
   return (data as ProductRow[]).map(toProduct);
 }
 
-export type StudioProduct = Product & { active: boolean; inDatabase: boolean };
+export type StudioProduct = Product & { active: boolean };
 
-/**
- * Every product for the Studio, hidden ones included, never cached. Falls back
- * to the built-in catalog (read-only) when Supabase is not configured.
- */
+/** Every product for the Studio, hidden ones included, never cached. */
 export async function getStudioProducts(): Promise<StudioProduct[]> {
   const supabase = getSupabaseAdmin();
-  const builtin = fallbackProducts.map((p) => ({ ...p, active: true, inDatabase: false }));
-  if (!supabase) return builtin;
+  if (!supabase) return [];
   const { data, error } = await supabase.from("products").select(COLUMNS).order("sort_order");
   if (error) throw new Error(`Could not load products: ${error.message}`);
-  if (!data.length) return builtin;
-  return (data as ProductRow[]).map((r) => ({ ...toProduct(r), active: r.is_active, inDatabase: true }));
+  return (data as ProductRow[]).map((r) => ({ ...toProduct(r), active: r.is_active }));
 }

@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { hasLocale } from "@/i18n/config";
+import { hasLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getStudioProducts } from "@/lib/products";
 import { getProductModels } from "@/lib/product-models";
-import { isStudioAuthed, studioEnabled } from "@/lib/studio-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { StudioApp } from "@/components/studio/studio-app";
-import { StudioLogin } from "@/components/studio/studio-login";
+import { StudioGate } from "@/components/studio/studio-gate";
 
 export const metadata: Metadata = { title: "Studio · Neoflam", robots: { index: false, follow: false } };
 
@@ -26,19 +25,14 @@ export default function StudioPage({ params }: PageProps<"/[lang]/studio">) {
 async function Studio({ params }: { params: PageProps<"/[lang]/studio">["params"] }) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
+  return (
+    <StudioGate>
+      <StudioHome lang={lang} />
+    </StudioGate>
+  );
+}
 
-  if (!studioEnabled()) {
-    return (
-      <div className="max-w-lg">
-        <h1 className="heading-4 text-ink">Studio is off</h1>
-        <p className="body-6 mt-3 text-ink-soft">
-          Set a <code>STUDIO_PASSWORD</code> environment variable (in <code>.env.local</code> and in Vercel) to switch it on.
-        </p>
-      </div>
-    );
-  }
-  if (!(await isStudioAuthed())) return <StudioLogin />;
-
+async function StudioHome({ lang }: { lang: Locale }) {
   const [products, models, dict] = await Promise.all([getStudioProducts(), getProductModels(), getDictionary(lang)]);
   return (
     <StudioApp
@@ -49,6 +43,7 @@ async function Studio({ params }: { params: PageProps<"/[lang]/studio">["params"
       colorNames={dict.catalog.colors}
       categoryNames={dict.catalog.categories}
       featureNames={dict.catalog.features}
+      variantTypeNames={dict.detail.variantTypes}
     />
   );
 }

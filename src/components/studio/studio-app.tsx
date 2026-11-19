@@ -1,13 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DownloadSimple, EyeSlash, MagnifyingGlass, Plus, SignOut, Trash, UploadSimple } from "@phosphor-icons/react";
 import { colorKeys, colorSwatch, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import type { ModelRecipe, Palette, Shape, StoredModel, ViewerModel } from "@/data/models";
+import type { VariantType } from "@/data/variants";
 import { ProductModelViewer, type ModelLabels } from "@/components/detail/product-model";
-import { createUpload, deleteModel, logout, saveModel } from "@/app/[lang]/studio/actions";
+import { deleteModel, logout } from "@/app/[lang]/studio/actions";
+import { uploadModel } from "@/lib/studio-model";
 import { buildGlb, hasLid, potHeightCm } from "@/lib/model-builder";
 import type { StudioProduct } from "@/lib/products";
 import { ProductForm } from "./product-form";
@@ -20,20 +23,28 @@ type Props = {
   colorNames: Record<ColorKey, string>;
   categoryNames: Record<CategoryKey, string>;
   featureNames: Record<FeatureKey, string>;
+  variantTypeNames: Record<VariantType, string>;
 };
 
-const NEW = "__new__";
-
 const STATUS: Record<StoredModel["source"] | "none", { label: string; className: string }> = {
-  builtin: { label: "Built-in recipe", className: "bg-mist text-ink" },
   recipe: { label: "Saved recipe", className: "bg-[#e6f2ea] text-[#1f6b3a]" },
   upload: { label: "Uploaded file", className: "bg-[#e7eefa] text-[#24508f]" },
   none: { label: "No 3D model", className: "bg-[#fbeaea] text-brand" },
 };
 
-export function StudioApp({ products, models, canSave, viewerLabels, colorNames, categoryNames, featureNames }: Props) {
+export function StudioApp({
+  products,
+  models,
+  canSave,
+  viewerLabels,
+  colorNames,
+  categoryNames,
+  featureNames,
+  variantTypeNames,
+}: Props) {
+  const { lang } = useParams<{ lang: string }>();
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(products[0]?.slug ?? NEW);
+  const [selected, setSelected] = useState<string | null>(products[0]?.slug ?? null);
   const [tab, setTab] = useState<"details" | "3d">("details");
   const [notice, setNotice] = useState<string | null>(null);
   const open = (slug: string, next: "details" | "3d" = tab) => {
@@ -47,7 +58,8 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames,
     return products.filter((p) => !q || p.name.toLowerCase().includes(q) || p.slug.includes(q));
   }, [products, query]);
   const missing = products.filter((p) => !models[p.slug]).length;
-  const product = products.find((p) => p.slug === selected);
+  // After a delete the selected slug is gone: fall back to the first product.
+  const product = products.find((p) => p.slug === selected) ?? products[0];
 
   return (
     <div>
@@ -78,14 +90,12 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames,
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside>
-          <button
-            type="button"
-            onClick={() => open(NEW, "details")}
-            aria-current={selected === NEW}
+          <Link
+            href={`/${lang}/studio/new`}
             className="caption-1 mb-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-4 py-2.5 text-white transition-opacity duration-300 hover:opacity-80"
           >
             <Plus weight="bold" className="size-4" /> New product
-          </button>
+          </Link>
           <label className="relative block">
             <span className="sr-only">Find a product</span>
             <MagnifyingGlass className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
@@ -104,9 +114,9 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames,
                   <button
                     type="button"
                     onClick={() => open(p.slug)}
-                    aria-current={p.slug === selected}
+                    aria-current={p.slug === product?.slug}
                     className={`flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors duration-200 ${
-                      p.slug === selected ? "bg-mist" : "hover:bg-mist/60"
+                      p.slug === product?.slug ? "bg-mist" : "hover:bg-mist/60"
                     }`}
                   >
                     <span className="relative size-11 shrink-0 overflow-hidden rounded-md bg-mist">
@@ -136,21 +146,14 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames,
               {notice}
             </p>
           )}
-          {selected === NEW ? (
-            <ProductForm
-              key={NEW}
-              product={null}
-              canSave={canSave}
-              categoryNames={categoryNames}
-              colorNames={colorNames}
-              featureNames={featureNames}
-              onSaved={(slug, visible) => {
-                open(slug, "3d");
-                setNotice(
-                  `Product created${visible ? " and live in the shop" : " (hidden from the shop for now)"}. Now give it a 3D model, or switch to Details to keep editing.`,
-                );
-              }}
-            />
+          {!product ? (
+            <p className="body-6 rounded-lg bg-mist px-5 py-8 text-center text-ink-soft">
+              No products yet.{" "}
+              <Link href={`/${lang}/studio/new`} className="text-ink underline underline-offset-4">
+                Add the first one
+              </Link>
+              .
+            </p>
           ) : (
             product && (
               <>
@@ -177,11 +180,18 @@ export function StudioApp({ products, models, canSave, viewerLabels, colorNames,
                   <ProductForm
                     key={product.slug}
                     product={product}
-                    canSave={canSave && product.inDatabase}
+                    canSave={canSave}
                     categoryNames={categoryNames}
                     colorNames={colorNames}
                     featureNames={featureNames}
+                    variantTypeNames={variantTypeNames}
                     onSaved={() => setNotice(null)}
+                    onDeleted={(slug) => {
+                      const deleted = products.find((p) => p.slug === slug)?.name ?? slug;
+                      setSelected(products.find((p) => p.slug !== slug)?.slug ?? null);
+                      setTab("details");
+                      setNotice(`${deleted} was deleted.`);
+                    }}
                   />
                 ) : (
                   <Editor
@@ -288,21 +298,15 @@ function Editor({ product, stored, canSave, viewerLabels, colorNames }: EditorPr
     setBusy(true);
     setMessage(null);
     try {
-      const slot = await createUpload(product.slug);
-      if (!slot.ok) throw new Error(slot.error);
-      const body = new FormData();
-      body.append("cacheControl", "31536000");
-      body.append("", blob, `${product.slug}.glb`);
-      const res = await fetch(slot.signedUrl, { method: "PUT", body });
-      if (!res.ok) throw new Error(`Upload failed (${res.status}).`);
       const r = normalise(recipe);
-      const saved = await saveModel(
+      const glb = await blob.arrayBuffer();
+      const result = await uploadModel(
         mode === "recipe"
-          ? { slug: product.slug, path: slot.path, source: "recipe", recipe: r, ...saveMeta(viewerMeta(r)) }
-          : { slug: product.slug, path: slot.path, source: "upload", recipe: null, colors: uploadColors, paint: uploadPaint, lidAnimation: uploadLid },
+          ? { slug: product.slug, glb, source: "recipe", recipe: r, ...saveMeta(viewerMeta(r)) }
+          : { slug: product.slug, glb, source: "upload", recipe: null, colors: uploadColors, paint: uploadPaint, lidAnimation: uploadLid },
+        (text) => setMessage({ tone: "ok", text }),
       );
-      if (!saved.ok) throw new Error(saved.error);
-      setMessage({ tone: "ok", text: "Saved. The 3D tab on the product page now shows this model." });
+      setMessage({ tone: "ok", text: savedText(result) });
       router.refresh();
     } catch (e) {
       setMessage({ tone: "error", text: e instanceof Error ? e.message : "Save failed." });
@@ -368,7 +372,7 @@ function Editor({ product, stored, canSave, viewerLabels, colorNames }: EditorPr
           <button type="button" onClick={save} disabled={!canSaveNow} className={primaryButton}>
             <UploadSimple weight="bold" className="size-4" /> {busy ? "Saving…" : "Save to product"}
           </button>
-          {stored && stored.source !== "builtin" && canSave && (
+          {stored && canSave && (
             <button type="button" onClick={remove} disabled={busy} className={secondaryButton}>
               <Trash weight="bold" className="size-4" /> Remove saved model
             </button>
@@ -641,7 +645,7 @@ function RecipeForm({
 }
 
 /** Colour switcher options shown to customers. The first is the colour the model is built in. */
-function ColorsEditor({
+export function ColorsEditor({
   colors,
   onChange,
   colorNames,
@@ -700,13 +704,13 @@ function ColorsEditor({
 
 /* ---------- small pieces ---------- */
 
-const inputClass = "body-6 w-full rounded-lg border border-line bg-white px-3 py-2 text-ink";
-const primaryButton =
+export const inputClass = "body-6 w-full rounded-lg border border-line bg-white px-3 py-2 text-ink";
+export const primaryButton =
   "caption-1 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-white transition-opacity duration-300 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40";
-const secondaryButton =
+export const secondaryButton =
   "caption-1 inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2.5 text-ink transition-colors duration-300 hover:bg-mist disabled:opacity-40";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
       <span className="caption-5 text-ink-soft">{label}</span>
@@ -715,7 +719,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
+export function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
   return (
     <label
       className={`caption-5 inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 ${
@@ -729,6 +733,13 @@ function Check({ label, checked, onChange }: { label: string; checked: boolean; 
 }
 
 /* ---------- helpers ---------- */
+
+/** Message after a model is saved, saying whether iPhone AR is ready. */
+export function savedText({ arFiles, arError }: { arFiles: number; arError: string | null }) {
+  return arFiles
+    ? "Saved. The product page shows this model, and iPhone AR opens it at real size."
+    : `Saved. The product page shows this model. The iPhone AR file couldn't be made (${arError ?? "unknown error"}), so iPhones will convert it when AR opens.`;
+}
 
 function defaultColors(product: StudioProduct) {
   const keys = product.colors.filter((c) => colorSwatch[c].startsWith("#"));
@@ -758,7 +769,7 @@ const viewerMeta = (r: ModelRecipe) => ({ colors: r.colors, paint: r.paint as st
 const saveMeta = (m: ReturnType<typeof viewerMeta>) => ({ colors: m.colors, paint: m.paint, lidAnimation: m.lidAnimation ?? null });
 
 /** Reads material and animation names from a .glb so the uploader can pick what to repaint and animate. */
-function inspectGlb(buf: ArrayBuffer) {
+export function inspectGlb(buf: ArrayBuffer) {
   const view = new DataView(buf);
   if (buf.byteLength < 20 || view.getUint32(0, true) !== 0x46546c67) throw new Error("That file isn't a .glb (binary glTF).");
   const jsonLength = view.getUint32(12, true);
