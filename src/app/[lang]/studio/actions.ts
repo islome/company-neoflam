@@ -4,9 +4,9 @@ import { updateTag } from "next/cache";
 import { categoryKeys, colorKeys, featureKeys, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import type { ModelRecipe } from "@/data/models";
 import { variantTypes, type Variant } from "@/data/variants";
-import { getStudioProducts } from "@/lib/products";
-import { MODELS_BUCKET, MODELS_TAG } from "@/lib/product-models";
-import { requireStudio, signIn, signOut } from "@/lib/studio-auth";
+import { getStudioProducts } from "@/lib/catalog/products";
+import { MODELS_BUCKET, MODELS_TAG } from "@/lib/catalog/product-models";
+import { requireStudio, signIn, signOut } from "@/lib/studio/studio-auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export type LoginState = { error: string | null };

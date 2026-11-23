@@ -2,7 +2,7 @@ import Image from "next/image";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import { site } from "@/config/site";
-import { Reveal } from "./reveal";
+import { Reveal } from "@/components/ui/reveal";
 
 // Matches the order of dictionary news items.
 const sources = [

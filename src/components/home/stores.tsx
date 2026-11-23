@@ -1,8 +1,8 @@
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import { getStores } from "@/lib/stores";
-import { Reveal } from "./reveal";
-import { StoreLocator } from "./store-locator";
+import { Reveal } from "@/components/ui/reveal";
+import { StoreLocator } from "@/components/stores/store-locator";
 
 export async function Stores({ t, lang }: { t: Dictionary["stores"]; lang: Locale }) {
   const stores = await getStores();

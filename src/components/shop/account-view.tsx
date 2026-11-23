@@ -6,7 +6,7 @@ import { locales, localeLabels, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import type { Store } from "@/config/site";
 import { useShop } from "@/lib/shop-store";
-import { storeTitle } from "@/components/store-locator";
+import { storeTitle } from "@/components/stores/store-locator";
 
 type Props = {
   lang: Locale;

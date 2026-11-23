@@ -1,18 +1,18 @@
 "use client";
 
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import { Handbag, Heart, Minus, Plus, Trash } from "@phosphor-icons/react";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import type { Product } from "@/data/catalog";
 import { MAX_BAG_QTY, shop, useShop } from "@/lib/shop-store";
-import { sizeLabel } from "@/lib/variant-label";
+import { sizeLabel } from "@/lib/catalog/variant-label";
 import { formatPrice, ProductCard } from "@/components/catalog/product-card";
-import { Related } from "@/components/detail/related";
+import { Related } from "@/components/product/related";
 import type { Store } from "@/config/site";
 import { PickupPicker } from "./pickup-picker";
-import { storeTitle } from "@/components/store-locator";
+import { storeTitle } from "@/components/stores/store-locator";
 
 type Props = {
   products: Product[];

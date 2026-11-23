@@ -7,7 +7,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import type { Store } from "@/config/site";
 import { shop } from "@/lib/shop-store";
-import { StoreLocator, storeTitle } from "@/components/store-locator";
+import { StoreLocator, storeTitle } from "@/components/stores/store-locator";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 

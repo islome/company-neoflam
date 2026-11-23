@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import { hasLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { site } from "@/config/site";
-import { Hero } from "@/components/hero";
-import { Products } from "@/components/products";
-import { TaglineReveal } from "@/components/tagline-reveal";
-import { Brands } from "@/components/brands";
-import { BrandFilm } from "@/components/brand-film";
-import { News } from "@/components/news";
-import { Stores } from "@/components/stores";
+import { Hero } from "@/components/home/hero";
+import { Products } from "@/components/home/products";
+import { TaglineReveal } from "@/components/home/tagline-reveal";
+import { Brands } from "@/components/home/brands";
+import { BrandFilm } from "@/components/home/brand-film";
+import { News } from "@/components/home/news";
+import { Stores } from "@/components/home/stores";
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;

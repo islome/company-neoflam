@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { getProducts } from "@/lib/products";
+import { getProducts } from "@/lib/catalog/products";
 import { getStores } from "@/lib/stores";
 import { BagView } from "@/components/shop/bag-view";
 

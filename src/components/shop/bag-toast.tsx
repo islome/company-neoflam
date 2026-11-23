@@ -1,6 +1,6 @@
 "use client";
 
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import { useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";

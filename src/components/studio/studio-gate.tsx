@@ -1,4 +1,4 @@
-import { isStudioAuthed, studioEnabled } from "@/lib/studio-auth";
+import { isStudioAuthed, studioEnabled } from "@/lib/studio/studio-auth";
 import { StudioLogin } from "./studio-login";
 
 /** Shows its children only to signed-in staff; otherwise the sign-in form (or a note that the Studio is off). */

@@ -1,10 +1,10 @@
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import { categories, type CategoryKey } from "@/config/products";
-import { Reveal } from "./reveal";
+import { Reveal } from "@/components/ui/reveal";
 
 // Staggered two column layout, like the global site.
 const columns: CategoryKey[][] = [["pots", "deep"], ["pans"]];

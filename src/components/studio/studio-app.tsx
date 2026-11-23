@@ -8,11 +8,11 @@ import { DownloadSimple, EyeSlash, MagnifyingGlass, Plus, SignOut, Trash, Upload
 import { colorKeys, colorSwatch, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import type { ModelRecipe, Palette, Shape, StoredModel, ViewerModel } from "@/data/models";
 import type { VariantType } from "@/data/variants";
-import { ProductModelViewer, type ModelLabels } from "@/components/detail/product-model";
+import { ProductModelViewer, type ModelLabels } from "@/components/product/product-model";
 import { deleteModel, logout } from "@/app/[lang]/studio/actions";
-import { uploadModel } from "@/lib/studio-model";
-import { buildGlb, hasLid, potHeightCm } from "@/lib/model-builder";
-import type { StudioProduct } from "@/lib/products";
+import { uploadModel } from "@/lib/studio/studio-model";
+import { buildGlb, hasLid, potHeightCm } from "@/lib/studio/model-builder";
+import type { StudioProduct } from "@/lib/catalog/products";
 import { ProductForm } from "./product-form";
 
 type Props = {

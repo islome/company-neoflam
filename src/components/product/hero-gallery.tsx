@@ -1,6 +1,6 @@
 "use client";
 
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "@/components/ui/product-image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Cube, CaretLeft, CaretRight, Scan } from "@phosphor-icons/react";
 import type { GalleryImage } from "@/data/gallery";
