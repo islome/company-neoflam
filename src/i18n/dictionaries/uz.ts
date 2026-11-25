@@ -40,7 +40,6 @@ const uz = {
   products: {
     title: "Mahsulotlarimiz",
     subtitle: "Barqaror va sog‘lom",
-    cta: "Ko‘rish",
     all: "Barcha mahsulotlar",
     items: {
       pots: {

@@ -1,46 +1,49 @@
-import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
-import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
 import { categories, type CategoryKey } from "@/config/products";
+import { ProductImage } from "@/components/ui/product-image";
 import { Reveal } from "@/components/ui/reveal";
 
-// Staggered two column layout, like the global site.
-const columns: CategoryKey[][] = [["pots", "deep"], ["pans"]];
-
+/**
+ * "Our products": the three cookware categories as a bento grid.
+ * Desktop: one tall feature card on the left, two cards stacked on the right, all ending on the same line.
+ * Tablet: the feature card spans the full width above the other two. Phone: one card per row.
+ */
 export function Products({ t, lang }: { t: Dictionary["products"]; lang: Locale }) {
+  const [feature, ...rest] = categories;
+
   return (
     <section id="products" aria-labelledby="products-title" className="py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-16 md:grid-cols-2 md:gap-12">
-          {columns.map((col, c) => (
-            <div key={c} className={`flex flex-col gap-16 md:gap-24 ${c === 1 ? "md:pt-48" : ""}`}>
-              {c === 0 && (
-                <Reveal>
-                  <h2 id="products-title" className="heading-3 md:heading-2 text-brand">
-                    {t.title}
-                  </h2>
-                  <p className="title-1 mt-4 text-ink">{t.subtitle}</p>
-                </Reveal>
-              )}
-              {col.map((key, i) => (
-                <Reveal key={key} delay={i * 0.06}>
-                  <ProductCard id={key} t={t} lang={lang} />
-                </Reveal>
-              ))}
-              {c === 1 && (
-                <Reveal>
-                  <Link
-                    href={`/${lang}/products`}
-                    className="button-md group inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-white transition-[background-color,transform] duration-300 hover:bg-brand-deep active:scale-[0.98]"
-                  >
-                    {t.all}
-                    <ArrowRight weight="bold" className="size-4 transition-transform duration-500 group-hover:translate-x-1" />
-                  </Link>
-                </Reveal>
-              )}
-            </div>
+        <Reveal className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className="caption-3 text-brand">{t.subtitle}</p>
+            <h2 id="products-title" className="heading-3 md:heading-2 mt-4 text-ink">
+              {t.title}
+            </h2>
+          </div>
+          <Link
+            href={`/${lang}/products`}
+            className="button-sm group inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-white transition-[background-color,transform] duration-300 hover:bg-brand-deep active:scale-[0.98]"
+          >
+            {t.all}
+            <ArrowRight
+              weight="bold"
+              className="size-4 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-1"
+            />
+          </Link>
+        </Reveal>
+
+        <div className="mt-12 grid gap-4 md:grid-cols-2 md:gap-6 lg:h-[640px] lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:grid-rows-2">
+          <Reveal className="md:col-span-2 lg:col-span-1 lg:row-span-2">
+            <CategoryCard id={feature.key} t={t} lang={lang} feature />
+          </Reveal>
+          {rest.map((c, i) => (
+            <Reveal key={c.key} delay={(i + 1) * 0.06} className="lg:min-h-0">
+              <CategoryCard id={c.key} t={t} lang={lang} />
+            </Reveal>
           ))}
         </div>
       </div>
@@ -48,45 +51,53 @@ export function Products({ t, lang }: { t: Dictionary["products"]; lang: Locale 
   );
 }
 
-export function ProductCard({
+function CategoryCard({
   id,
   t,
   lang,
-  headingLevel = "h3",
+  feature = false,
 }: {
   id: CategoryKey;
   t: Dictionary["products"];
   lang: Locale;
-  headingLevel?: "h2" | "h3";
+  feature?: boolean;
 }) {
   const item = t.items[id];
   const image = categories.find((c) => c.key === id)!.image;
-  const Heading = headingLevel;
 
   return (
-    <article id={id} className="group">
-      <Link href={`/${lang}/products?category=cookware`} className="block rounded-3xl" tabIndex={-1} aria-hidden>
-        <div className="relative aspect-[5/4] overflow-hidden rounded-3xl bg-cream">
-          <ProductImage
-            src={image}
-            alt=""
-            fill
-            placeholder="blur"
-            sizes="(min-width: 768px) 560px, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
+    <Link
+      href={`/${lang}/products?category=cookware`}
+      className={`group relative isolate block h-full overflow-hidden rounded-3xl bg-cream focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink ${
+        feature ? "aspect-square md:aspect-[16/9] lg:aspect-auto" : "aspect-square lg:aspect-auto"
+      }`}
+    >
+      <ProductImage
+        src={image}
+        alt=""
+        fill
+        placeholder="blur"
+        sizes={feature ? "(min-width: 1024px) 640px, 100vw" : "(min-width: 1024px) 460px, (min-width: 768px) 50vw, 100vw"}
+        className="-z-10 object-cover transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+      />
+
+      {/* Card radius 24px with a 16px inset, so the panel gets 24 − 16 = 8px (rounded-lg). */}
+      <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-4 rounded-lg bg-white/90 p-4 backdrop-blur-md">
+        <div className="min-w-0">
+          <p className="caption-3 text-brand">{item.tag}</p>
+          <h3 className={`mt-1 text-ink ${feature ? "heading-6 md:heading-4" : "heading-6"}`}>{item.name}</h3>
+          <p className={`body-6 mt-1 text-ink-soft ${feature ? "line-clamp-1 md:line-clamp-none" : "line-clamp-1"}`}>{item.body}</p>
         </div>
-      </Link>
-      <p className="caption-3 mt-6 text-brand">{item.tag}</p>
-      <Heading className="heading-4 mt-2 text-ink">{item.name}</Heading>
-      <p className="body-3 mt-2 max-w-md text-ink-soft">{item.body}</p>
-      <Link
-        href={`/${lang}/products?category=cookware`}
-        className="button-sm mt-6 inline-flex items-center gap-2 rounded-full border border-ink/15 px-4 py-2 text-ink transition-[background-color,border-color,color,transform] duration-300 hover:border-brand hover:bg-brand hover:text-white active:scale-[0.98]"
-      >
-        {t.cta}
-        <ArrowRight weight="bold" className="size-4" />
-      </Link>
-    </article>
+        <span
+          aria-hidden
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-colors duration-300 group-hover:bg-brand"
+        >
+          <ArrowUpRight
+            weight="bold"
+            className="size-4 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          />
+        </span>
+      </div>
+    </Link>
   );
 }

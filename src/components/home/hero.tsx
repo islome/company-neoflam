@@ -173,7 +173,7 @@ function Accented({ line, accent }: { line: string; accent: string }) {
   return (
     <>
       {line.slice(0, at)}
-      <strong className="font-bold text-brand">{accent}</strong>
+      <strong className="[font-weight:inherit] text-brand">{accent}</strong>
       {line.slice(at + accent.length)}
     </>
   );
