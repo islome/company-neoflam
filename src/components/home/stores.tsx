@@ -8,18 +8,18 @@ export async function Stores({ t, lang }: { t: Dictionary["stores"]; lang: Local
   const stores = await getStores();
 
   return (
-    <section id="stores" aria-labelledby="stores-title" className="bg-sun py-24">
+    <section id="stores" aria-labelledby="stores-title" className="bg-black py-24 [color-scheme:dark]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <p className="caption-3 text-brand">{t.eyebrow}</p>
-          <h2 id="stores-title" className="heading-3 md:heading-2 mt-4 text-ink">
+          <h2 id="stores-title" className="heading-3 md:heading-2 mt-4 text-white">
             {t.title}
           </h2>
-          <p className="body-3 mt-6 max-w-[560px] text-ink/80">{t.subtitle}</p>
+          <p className="body-3 mt-6 max-w-[560px] text-white/70">{t.subtitle}</p>
         </Reveal>
 
         <Reveal delay={0.08} className="mt-12">
-          <StoreLocator stores={stores} t={t} lang={lang} />
+          <StoreLocator stores={stores} t={t} lang={lang} tone="dark" />
         </Reveal>
       </div>
     </section>

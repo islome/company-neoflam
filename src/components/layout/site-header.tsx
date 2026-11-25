@@ -40,8 +40,8 @@ export function SiteHeader({ lang, nav, a11y, shop, mini }: Props) {
 
   const links = [
     { id: "products", label: nav.products },
-    { id: "brands", label: nav.brands },
-    { id: "news", label: nav.news },
+    { id: "popular", label: nav.popular },
+    { id: "collections", label: nav.collections },
     { id: "stores", label: nav.stores },
   ];
 

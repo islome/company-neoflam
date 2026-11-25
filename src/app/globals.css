@@ -10,6 +10,9 @@
   --color-sun-deep: #efb52c;
   --color-night: #131209;
   --color-ink: #141414;
+  /* Dark surfaces (stores section) */
+  --color-carbon: #181818;
+  --color-graphite: #272727;
   --color-ink-soft: #4a4a4a;
   --color-paper: #ffffff;
   --color-cream: #f7f3ec;

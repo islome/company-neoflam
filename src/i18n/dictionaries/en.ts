@@ -16,8 +16,8 @@ const en: Dictionary = {
   },
   nav: {
     products: "Products",
-    brands: "Brands",
-    news: "News",
+    popular: "Popular",
+    collections: "Collections",
     stores: "Stores",
     cta: "Our products",
   },
@@ -272,35 +272,25 @@ const en: Dictionary = {
   tagline: {
     lines: ["Natural materials.", "Nothing harmful.", "Health in every meal."],
   },
-  brands: {
-    title: "Our brands",
-    subtitle: "The beginning of a healthy kitchen",
-    cta: "About the brand",
+  popular: {
+    eyebrow: "Best sellers",
+    title: "Popular products",
+    subtitle: "What our customers choose most often.",
+    all: "All products",
+    prev: "Previous product",
+    next: "Next product",
   },
   film: {
     titleLines: ["Everyday happy and", "healthy life, Neoflam"],
     play: "Watch the film",
   },
-  news: {
-    title: "Neoflam news",
-    cta: "All news",
-    items: [
-      {
-        category: "Awards",
-        title: "FIKA Objet Comfort wins the 2025 German Design Award",
-        date: "2025.02.05",
-      },
-      {
-        category: "Media",
-        title: "Fika appears in the JTBC drama “Not Exactly a Hero”",
-        date: "2024.05.23",
-      },
-      {
-        category: "Awards",
-        title: "Fika Objet Comfort wins the 2024 Kitchen Innovation Award",
-        date: "2024.02.29",
-      },
-    ],
+  collections: {
+    eyebrow: "Collections",
+    title: "Neoflam collections",
+    subtitle: "Every collection has its own style and colour. Pick the one that suits your kitchen.",
+    explore: "Explore",
+    prev: "Previous collection",
+    next: "Next collection",
   },
   stores: {
     eyebrow: "Where to buy",
@@ -314,6 +304,14 @@ const en: Dictionary = {
     showOnMap: "Show on map",
     kinds: { main: "Main store", regional: "Regional store" },
     mapSoon: "Map coming soon",
+    copy: "Copy address",
+    copied: "Copied",
+    noAddress: "Location to be confirmed",
+    gestures: {
+      windows: "Use Ctrl + scroll to zoom the map",
+      mac: "Use ⌘ + scroll to zoom the map",
+      mobile: "Use two fingers to move the map",
+    },
   },
   footer: {
     branch: "Uzbekistan branch",

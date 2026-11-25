@@ -1,29 +1,47 @@
 "use client";
 
-import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef } from "react";
-import type { Map as LeafletMap, Marker } from "leaflet";
+import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import type { Store } from "@/config/site";
 
 type Pin = Pick<Store, "id" | "lat" | "lng"> & { label: string };
 
-/** Uzbekistan map with one pin per store. The selected pin is highlighted and centred. */
+/** Hints shown when a one finger drag or a plain scroll would move the page, not the map. */
+export type GestureHints = { windows: string; mac: string; mobile: string };
+
+// Free vector tiles, no API key. Light grey style to match the site.
+// Docs: https://openfreemap.org — swap the URL for MapTiler or Stadia if you ever need an SLA.
+const STYLE_URL = {
+  light: "https://tiles.openfreemap.org/styles/positron",
+  dark: "https://tiles.openfreemap.org/styles/dark",
+};
+
+/**
+ * Uzbekistan map with one pin per store. The selected pin is highlighted and centred.
+ * Pinch (phone), trackpad pinch or Ctrl/⌘ + scroll (desktop) zooms; a single finger keeps scrolling the page.
+ */
 export function StoreMap({
   pins,
   selected,
   onSelect,
   label,
+  gestures,
+  dark = false,
   focusSelected = false,
 }: {
   pins: Pin[];
   selected: string;
   onSelect: (id: string) => void;
   label: string;
+  gestures: GestureHints;
+  /** Dark basemap with white pins, for black sections. */
+  dark?: boolean;
   /** Open zoomed on the selected pin instead of showing every pin. */
   focusSelected?: boolean;
 }) {
   const box = useRef<HTMLDivElement>(null);
-  const map = useRef<LeafletMap | null>(null);
+  const map = useRef<MapLibreMap | null>(null);
   const markers = useRef(new Map<string, Marker>());
   const onSelectRef = useRef(onSelect);
   const selectedRef = useRef(selected);
@@ -32,50 +50,66 @@ export function StoreMap({
     selectedRef.current = selected;
   }, [onSelect, selected]);
 
-  // Leaflet needs `window`, so it is loaded only in the browser.
+  // MapLibre needs `window` and WebGL, so it is loaded only in the browser.
   useEffect(() => {
     let cancelled = false;
     let resize: ResizeObserver | undefined;
     const placedMarkers = markers.current;
     (async () => {
-      const L = await import("leaflet");
+      const { default: maplibregl } = await import("maplibre-gl");
       if (cancelled || !box.current || map.current) return;
 
-      const m = L.map(box.current, { scrollWheelZoom: false, zoomControl: true, attributionControl: true });
-      // OpenStreetMap tiles, softened to grey by the container classes below.
-      // For heavy production traffic, switch to a keyed tile provider (MapTiler, Stadia, Yandex).
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(m);
+      const m = new maplibregl.Map({
+        container: box.current,
+        style: STYLE_URL[dark ? "dark" : "light"],
+        center: [64.6, 41.3],
+        zoom: 5,
+        cooperativeGestures: true,
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
+        attributionControl: { compact: true },
+        locale: {
+          "CooperativeGesturesHandler.WindowsHelpText": gestures.windows,
+          "CooperativeGesturesHandler.MacHelpText": gestures.mac,
+          "CooperativeGesturesHandler.MobileHelpText": gestures.mobile,
+        },
+      });
+      m.touchZoomRotate.disableRotation();
+      m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+      map.current = m;
 
       const placed = pins.filter((p) => p.lat !== null && p.lng !== null);
       for (const p of placed) {
-        const marker = L.marker([p.lat!, p.lng!], {
-          icon: pinIcon(L, p.id === selectedRef.current),
-          zIndexOffset: p.id === selectedRef.current ? 1000 : 0,
-          title: p.label,
-          keyboard: true,
-          riseOnHover: true,
-        })
-          .addTo(m)
-          .bindTooltip(p.label, { direction: "top", offset: [0, -36] })
-          .on("click", () => onSelectRef.current(p.id));
-        markers.current.set(p.id, marker);
+        const el = document.createElement("button");
+        el.type = "button";
+        el.title = p.label;
+        el.setAttribute("aria-label", p.label);
+        el.className = "cursor-pointer border-0 bg-transparent p-0";
+        paintPin(el, p.id === selectedRef.current, dark);
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onSelectRef.current(p.id);
+        });
+        const marker = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([p.lng!, p.lat!]).addTo(m);
+        placedMarkers.set(p.id, marker);
       }
-      // Rough view of Uzbekistan until the box has a real size; the observer below frames the pins.
-      m.setView([41.3, 64.6], 6);
-      map.current = m;
 
-      // Re-measure when the box changes size (e.g. a dialog finishing its entrance animation).
+      // Frame the pins once the box has a real size (e.g. after a dialog finishes its entrance animation).
       let fitted = false;
       resize = new ResizeObserver(() => {
-        m.invalidateSize();
-        if (!fitted && placed.length && box.current && box.current.clientWidth > 0) {
-          fitted = true;
-          const focus = placed.find((p) => p.id === selectedRef.current);
-          if (focus && focusSelected) m.setView([focus.lat!, focus.lng!], 13);
-          else m.fitBounds(L.latLngBounds(placed.map((p) => [p.lat!, p.lng!])), { padding: [48, 48] });
+        m.resize();
+        if (fitted || !placed.length || !box.current || box.current.clientWidth === 0) return;
+        fitted = true;
+        const focus = placed.find((p) => p.id === selectedRef.current);
+        if (focus && focusSelected) {
+          m.jumpTo({ center: [focus.lng!, focus.lat!], zoom: 14 });
+        } else if (placed.length === 1) {
+          m.jumpTo({ center: [placed[0].lng!, placed[0].lat!], zoom: 13 });
+        } else {
+          const bounds = new maplibregl.LngLatBounds();
+          placed.forEach((p) => bounds.extend([p.lng!, p.lat!]));
+          m.fitBounds(bounds, { padding: 56, maxZoom: 13, animate: false });
         }
       });
       resize.observe(box.current);
@@ -87,51 +121,53 @@ export function StoreMap({
       map.current = null;
       placedMarkers.clear();
     };
-    // Pins come from the server and do not change while the page is open.
+    // Pins and copy come from the server and do not change while the page is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Highlight and zoom to the selected store, but leave the first view showing every pin.
+  // Highlight and fly to the selected store, but leave the first view showing every pin.
   const firstRun = useRef(true);
   useEffect(() => {
-    (async () => {
-      const L = await import("leaflet");
-      markers.current.forEach((marker, id) => {
-        marker.setIcon(pinIcon(L, id === selected));
-        marker.setZIndexOffset(id === selected ? 1000 : 0);
-      });
-      const pin = pins.find((p) => p.id === selected);
-      if (firstRun.current) {
-        firstRun.current = false;
-        return;
-      }
-      if (map.current && pin?.lat != null && pin.lng != null) {
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        map.current.flyTo([pin.lat, pin.lng], 13, {
-          duration: reduce ? 0 : 0.8,
-          easeLinearity: 0.2,
-        });
-      }
-    })();
-  }, [selected, pins]);
+    markers.current.forEach((marker, id) => paintPin(marker.getElement(), id === selected, dark));
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    const pin = pins.find((p) => p.id === selected);
+    if (map.current && pin?.lat != null && pin.lng != null) {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      map.current.flyTo({ center: [pin.lng, pin.lat], zoom: 14, duration: reduce ? 0 : 900, essential: false });
+    }
+  }, [selected, pins, dark]);
 
   return (
     <div
       ref={box}
       role="region"
       aria-label={label}
-      className="relative z-0 h-full w-full overflow-hidden rounded-3xl bg-mist [&_.leaflet-control-attribution]:text-xs [&_.leaflet-tile-pane]:[filter:grayscale(1)_contrast(0.9)_brightness(1.05)]"
+      className={`relative z-0 h-full w-full overflow-hidden rounded-3xl ${dark ? `bg-carbon ${DARK_CONTROLS}` : "bg-mist"} [&_.maplibregl-ctrl-attrib]:text-xs [&_.maplibregl-cooperative-gesture-screen]:font-sans`}
     />
   );
 }
 
-function pinIcon(L: typeof import("leaflet"), active: boolean) {
+// MapLibre's controls are white by default; recolour them for the dark map.
+const DARK_CONTROLS = [
+  "[&_.maplibregl-ctrl-group]:bg-graphite!",
+  "[&_.maplibregl-ctrl-group]:shadow-none!",
+  "[&_.maplibregl-ctrl-group_button+button]:border-white/10!",
+  "[&_.maplibregl-ctrl-icon]:invert",
+  "[&_.maplibregl-ctrl-attrib]:bg-carbon/80!",
+  "[&_.maplibregl-ctrl-attrib]:text-white/60!",
+  "[&_.maplibregl-ctrl-attrib_a]:text-white/70!",
+  "[&_.maplibregl-ctrl-attrib-button]:invert",
+].join(" ");
+
+function paintPin(el: HTMLElement, active: boolean, dark: boolean) {
   const size = active ? 44 : 36;
-  const fill = active ? "#c71721" : "#141414";
-  return L.divIcon({
-    className: "",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" style="filter:drop-shadow(0 4px 8px rgba(20,20,20,.25));transition:transform .3s cubic-bezier(.22,1,.36,1)"><path fill="${fill}" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>`,
-  });
+  // Inactive pins are black on the light map and white on the dark one; the selected pin is always brand red.
+  const fill = active ? "#c71721" : dark ? "#ffffff" : "#141414";
+  const dot = !active && dark ? "#141414" : "#fff";
+  el.style.zIndex = active ? "2" : "1";
+  el.setAttribute("aria-pressed", String(active));
+  el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true" style="display:block;filter:drop-shadow(0 4px 8px rgba(20,20,20,.25))"><path fill="${fill}" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="${dot}"/></svg>`;
 }

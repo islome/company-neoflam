@@ -31,7 +31,7 @@ export const stores: Store[] = [
     kind: "main",
     city: { uz: "Toshkent", ru: "Ташкент", en: "Tashkent" },
     name: "Neoflam",
-    address: "{{address}}",
+    address: "Shayxontohur tumani, Amir Temur ko'chasi, 108-uy",
     hours: "10:00 – 20:00",
     phone: "{{+998 phone}}",
     mapUrl: null,
@@ -44,7 +44,7 @@ export const stores: Store[] = [
     kind: "regional",
     city: { uz: "Toshkent", ru: "Ташкент", en: "Tashkent" },
     name: "Neoflam",
-    address: "{{address}}",
+    address: "Amir Temur ko'chasi, 108-uy, Shayxontohur tumani",
     hours: "10:00 – 20:00",
     phone: "{{+998 phone}}",
     mapUrl: null,
@@ -57,7 +57,7 @@ export const stores: Store[] = [
     kind: null,
     city: { uz: "Samarqand", ru: "Самарканд", en: "Samarkand" },
     name: "Neoflam",
-    address: "{{address}}",
+    address: "Islom Karimov ko'chasi, 1-uy",
     hours: "10:00 – 20:00",
     phone: "{{+998 phone}}",
     mapUrl: null,
@@ -69,7 +69,7 @@ export const stores: Store[] = [
     kind: null,
     city: { uz: "Namangan", ru: "Наманган", en: "Namangan" },
     name: "Neoflam",
-    address: "{{address}}",
+    address: "Ohunboboyev ko'chasi, 5-uy",
     hours: "10:00 – 20:00",
     phone: "{{+998 phone}}",
     mapUrl: null,
@@ -106,12 +106,6 @@ export const site = {
 
   links: {
     global: "https://neoflam.com/en",
-    news: "https://neoflam.com/en/board/news.php",
-    brands: {
-      neoflam: "https://neoflam.com/en/about/brand/neoflam.php",
-      betterfinger: "https://neoflam.com/en/about/brand/betterfinger.php",
-      frenchbull: "https://neoflam.com/en/about/brand/frenchbull.php",
-    },
     social: {
       instagram: "https://www.instagram.com/neoflam_korea/",
       facebook: "https://www.facebook.com/neoflamkorea",

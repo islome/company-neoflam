@@ -28,13 +28,13 @@ src/
 ├── proxy.ts                Language redirect (Next.js proxy, must stay at src/ root)
 ├── components/
 │   ├── layout/             Site header, footer, mini bar, logo
-│   ├── home/               Home page sections: hero, tagline, products, brands, brand film, news, stores
+│   ├── home/               Home page sections: hero, tagline, products, popular products, brand film, collections, stores
 │   ├── catalog/            Product catalog: filters, grid, product card, colour swatch
 │   ├── product/            Product detail page: gallery, 3D viewer, purchase box, related
 │   ├── shop/               Bag, favorites, account, pickup picker, bag toast
 │   ├── stores/             Store locator and map
 │   ├── studio/             Staff Studio: login, product form, 3D model tools
-│   └── ui/                 Shared building blocks: reveal animation, product image
+│   └── ui/                 Shared building blocks: reveal animation, product image, looping carousel
 ├── config/                 Site settings: contacts, stores fallback, media URLs, home categories
 ├── data/                   Built-in product data: catalog, gallery, variants, 3D model recipes
 ├── i18n/                   Languages and UZ / RU / EN dictionaries (all copy)
@@ -89,4 +89,6 @@ Push to GitHub, import the repo in Vercel, add the env vars, deploy.
 
 - Fill the `{{placeholders}}` in `src/config/site.ts`.
 - Replace the text wordmark in `src/components/layout/logo.tsx` with the official SVG logo.
-- Brand and news images are loaded from neoflam.com. Move them to `/public` or Supabase Storage.
+- The brand film cover is loaded from neoflam.com (`src/config/site.ts` → `media`). Move it to `/public` or Supabase Storage.
+- "Popular products" on the home page follow the Studio sort order until real sales data exists.
+- Collections (`src/config/collections.ts`, photos in `public/images/collections/`) are static placeholders until the Supabase `collections` table exists.

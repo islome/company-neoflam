@@ -5,9 +5,9 @@ import { site } from "@/config/site";
 import { Hero } from "@/components/home/hero";
 import { Products } from "@/components/home/products";
 import { TaglineReveal } from "@/components/home/tagline-reveal";
-import { Brands } from "@/components/home/brands";
+import { PopularProducts } from "@/components/home/popular-products";
 import { BrandFilm } from "@/components/home/brand-film";
-import { News } from "@/components/home/news";
+import { Collections } from "@/components/home/collections";
 import { Stores } from "@/components/home/stores";
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
@@ -20,14 +20,14 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
       <Hero hero={dict.hero} videoUrl={site.media.heroVideo} lang={lang} />
       <Products t={dict.products} lang={lang} />
       <TaglineReveal lines={dict.tagline.lines} />
-      <Brands t={dict.brands} />
+      <PopularProducts t={dict.popular} catalogT={dict.catalog} lang={lang} />
       <BrandFilm
         t={dict.film}
         a11y={dict.a11y}
         cover={site.media.brandFilmCover}
         src={site.media.brandFilm}
       />
-      <News t={dict.news} />
+      <Collections t={dict.collections} />
       <Stores t={dict.stores} lang={lang} />
     </main>
   );
