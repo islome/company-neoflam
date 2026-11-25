@@ -7,6 +7,8 @@ import { site } from "@/config/site";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { BagToast } from "@/components/shop/bag-toast";
+import { HomeScroll } from "@/components/layout/home-scroll";
+import { HOME_SCROLL_SCRIPT } from "@/components/layout/home-scroll-script";
 import "../globals.css";
 
 const manrope = Manrope({
@@ -56,7 +58,14 @@ export default async function RootLayout({
 
   return (
     <html lang={htmlLang[lang]} className={`${manrope.variable} antialiased`}>
+      <head>
+        {/* The home page always opens at the hero (see components/layout/home-scroll.tsx). A plain inline
+            script on purpose: it must run while the HTML is parsed, before the browser or Next.js reads
+            the #hash, which next/script's beforeInteractive does not guarantee. */}
+        <script dangerouslySetInnerHTML={{ __html: HOME_SCROLL_SCRIPT }} />
+      </head>
       <body className="min-h-svh">
+        <HomeScroll />
         <a
           href="#main"
           className="button-sm sr-only z-[70] rounded-full bg-ink px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
