@@ -42,7 +42,6 @@ const en: Dictionary = {
   products: {
     title: "Our products",
     subtitle: "Sustainable and healthy",
-    cta: "View",
     all: "All products",
     items: {
       pots: {

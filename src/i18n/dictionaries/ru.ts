@@ -42,7 +42,6 @@ const ru: Dictionary = {
   products: {
     title: "Наша продукция",
     subtitle: "Экологично и полезно",
-    cta: "Смотреть",
     all: "Вся продукция",
     items: {
       pots: {

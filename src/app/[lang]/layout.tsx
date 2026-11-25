@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { Changa_One, Manrope } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, htmlLang, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -15,6 +15,13 @@ const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin", "latin-ext", "cyrillic"],
   weight: ["400", "500", "600", "700"],
+});
+
+// Display face for titles (heading-1 … heading-6). Regular only, Latin only: see globals.css.
+const changaOne = Changa_One({
+  variable: "--font-changa-one",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 export function generateStaticParams() {
@@ -57,7 +64,7 @@ export default async function RootLayout({
   const dict = await getDictionary(lang);
 
   return (
-    <html lang={htmlLang[lang]} className={`${manrope.variable} antialiased`}>
+    <html lang={htmlLang[lang]} className={`${manrope.variable} ${changaOne.variable} antialiased`}>
       <head>
         {/* The home page always opens at the hero (see components/layout/home-scroll.tsx). A plain inline
             script on purpose: it must run while the HTML is parsed, before the browser or Next.js reads

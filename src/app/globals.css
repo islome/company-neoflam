@@ -38,44 +38,61 @@
   }
 }
 
+/* Titles use Changa One (regular, its only weight). It has no Cyrillic letters, so Russian pages keep
+   Manrope semibold for the whole title instead of mixing two fonts inside one heading. */
+:root {
+  --heading-font: var(--font-changa-one), var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --heading-weight: 400;
+}
+:lang(ru) {
+  --heading-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --heading-weight: 600;
+}
+
 /* Named text styles (landing-page-design B1) */
 @utility heading-1 {
   font-size: var(--text-6xl);
   line-height: 1;
-  font-weight: 600;
+  font-family: var(--heading-font);
+  font-weight: var(--heading-weight);
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
 @utility heading-2 {
   font-size: var(--text-5xl);
   line-height: 1;
-  font-weight: 600;
+  font-family: var(--heading-font);
+  font-weight: var(--heading-weight);
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
 @utility heading-3 {
   font-size: var(--text-4xl);
   line-height: var(--text-4xl--line-height);
-  font-weight: 600;
+  font-family: var(--heading-font);
+  font-weight: var(--heading-weight);
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
 @utility heading-4 {
   font-size: var(--text-3xl);
   line-height: var(--text-3xl--line-height);
-  font-weight: 600;
+  font-family: var(--heading-font);
+  font-weight: var(--heading-weight);
   text-wrap: balance;
 }
 @utility heading-5 {
   font-size: var(--text-2xl);
   line-height: var(--text-2xl--line-height);
-  font-weight: 600;
+  font-family: var(--heading-font);
+  font-weight: var(--heading-weight);
   text-wrap: balance;
 }
 @utility heading-6 {
   font-size: var(--text-xl);
   line-height: var(--text-xl--line-height);
-  font-weight: 600;
+  font-family: var(--heading-font);
+  font-weight: var(--heading-weight);
   text-wrap: balance;
 }
 @utility title-1 {
