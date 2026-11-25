@@ -6,8 +6,8 @@ import { ArrowLeft, CheckCircle, Cube, Trash, UploadSimple, WarningCircle } from
 import { colorSwatch, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import type { ViewerModel } from "@/data/models";
 import type { VariantType } from "@/data/variants";
-import { ProductModelViewer, type ModelLabels } from "@/components/detail/product-model";
-import { uploadModel } from "@/lib/studio-model";
+import { ProductModelViewer, type ModelLabels } from "@/components/product/product-model";
+import { uploadModel } from "@/lib/studio/studio-model";
 import { ProductForm, type Note } from "./product-form";
 import { Check, Field, inspectGlb, inputClass, primaryButton, savedText, secondaryButton } from "./studio-app";
 

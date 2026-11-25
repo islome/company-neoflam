@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { hasLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { getProducts } from "@/lib/products";
+import { getProducts } from "@/lib/catalog/products";
 import { Catalog, CatalogView } from "@/components/catalog/catalog";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/products">): Promise<Metadata> {

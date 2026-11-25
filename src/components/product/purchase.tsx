@@ -8,7 +8,7 @@ import type { Dictionary } from "@/i18n/dictionaries/uz";
 import { colorSwatch, type Product } from "@/data/catalog";
 import { variantTypes, type Variant } from "@/data/variants";
 import { shop, useShop } from "@/lib/shop-store";
-import { sizeLabel } from "@/lib/variant-label";
+import { sizeLabel } from "@/lib/catalog/variant-label";
 import { Swatch } from "@/components/catalog/swatch";
 import { useProductSelection } from "./product-selection";
 

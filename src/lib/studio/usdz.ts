@@ -11,7 +11,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { USDZExporter } from "three/examples/jsm/exporters/USDZExporter.js";
 import type { ColorKey } from "@/data/catalog";
 import type { ModelRecipe } from "@/data/models";
-import { buildUsdz } from "@/lib/model-builder";
+import { buildUsdz } from "@/lib/studio/model-builder";
 
 // The same decoders <model-viewer> loads for compressed models.
 const DRACO_DECODERS = "https://www.gstatic.com/draco/versioned/decoders/1.5.6/";

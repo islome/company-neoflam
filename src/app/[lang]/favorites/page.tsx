@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { getProducts } from "@/lib/products";
+import { getProducts } from "@/lib/catalog/products";
 import { FavoritesView } from "@/components/shop/favorites-view";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/favorites">): Promise<Metadata> {

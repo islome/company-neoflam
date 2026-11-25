@@ -4,7 +4,7 @@
  */
 import { createModelUploads, saveModel } from "@/app/[lang]/studio/actions";
 import type { ModelRecipe } from "@/data/models";
-import { arGroups, usdzFromGlb, usdzFromRecipe, type ArColor } from "@/lib/usdz";
+import { arGroups, usdzFromGlb, usdzFromRecipe, type ArColor } from "@/lib/studio/usdz";
 
 export type ModelToSave = {
   slug: string;

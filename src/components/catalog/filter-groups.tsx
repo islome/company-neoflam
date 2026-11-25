@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { CaretDown, Check } from "@phosphor-icons/react";
 import { categoryKeys, colorKeys, priceRanges, type ColorKey, type PriceKey } from "@/data/catalog";
 import type { Dictionary } from "@/i18n/dictionaries/uz";
-import type { Filters, facetCounts } from "@/lib/catalog-filters";
+import type { Filters, facetCounts } from "@/lib/catalog/catalog-filters";
 import { Swatch } from "./swatch";
 
 type Props = {

@@ -1,4 +1,4 @@
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/uz";

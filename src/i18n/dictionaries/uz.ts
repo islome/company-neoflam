@@ -14,8 +14,8 @@ const uz = {
   },
   nav: {
     products: "Mahsulotlar",
-    brands: "Brendlar",
-    news: "Yangiliklar",
+    popular: "Ommabop",
+    collections: "Kolleksiyalar",
     stores: "Do‘konlar",
     cta: "Mahsulotlarimiz",
   },
@@ -270,35 +270,25 @@ const uz = {
   tagline: {
     lines: ["Tabiiy materiallar.", "Zararli moddalarsiz.", "Har bir taomda sog‘liq."],
   },
-  brands: {
-    title: "Brendlarimiz",
-    subtitle: "Sog‘lom oshxonaning boshlanishi",
-    cta: "Brend haqida",
+  popular: {
+    eyebrow: "Ko‘p sotilgan",
+    title: "Ommabop mahsulotlar",
+    subtitle: "Xaridorlarimiz eng ko‘p tanlaydigan mahsulotlar.",
+    all: "Barcha mahsulotlar",
+    prev: "Oldingi mahsulot",
+    next: "Keyingi mahsulot",
   },
   film: {
     titleLines: ["Har kuni baxtli va", "sog‘lom hayot, Neoflam"],
     play: "Filmni ko‘rish",
   },
-  news: {
-    title: "Neoflam yangiliklari",
-    cta: "Barcha yangiliklar",
-    items: [
-      {
-        category: "Mukofot",
-        title: "FIKA Objet Comfort 2025 German Design Award sovrinini qo‘lga kiritdi",
-        date: "2025.02.05",
-      },
-      {
-        category: "Media",
-        title: "Fika JTBC telekanalining “Not Exactly a Hero” serialida",
-        date: "2024.05.23",
-      },
-      {
-        category: "Mukofot",
-        title: "Fika Objet Comfort 2024 Kitchen Innovation Award sovrindori",
-        date: "2024.02.29",
-      },
-    ],
+  collections: {
+    eyebrow: "Kolleksiyalar",
+    title: "Neoflam kolleksiyalari",
+    subtitle: "Har bir kolleksiya o‘z uslubi va rangiga ega. Oshxonangizga mosini tanlang.",
+    explore: "Ko‘rish",
+    prev: "Oldingi kolleksiya",
+    next: "Keyingi kolleksiya",
   },
   stores: {
     eyebrow: "Qayerdan sotib olish",
@@ -312,6 +302,15 @@ const uz = {
     showOnMap: "Xaritada ko‘rsatish",
     kinds: { main: "Bosh do‘kon", regional: "Hududiy do‘kon" },
     mapSoon: "Xarita tez orada",
+    copy: "Manzilni nusxalash",
+    copied: "Nusxalandi",
+    noAddress: "Joylashuv aniq emas",
+    /** Hints the map shows when a gesture would scroll the page instead of the map. */
+    gestures: {
+      windows: "Xaritani kattalashtirish uchun Ctrl + aylantirishdan foydalaning",
+      mac: "Xaritani kattalashtirish uchun ⌘ + aylantirishdan foydalaning",
+      mobile: "Xaritani surish uchun ikki barmoqdan foydalaning",
+    },
   },
   footer: {
     branch: "O‘zbekiston filiali",

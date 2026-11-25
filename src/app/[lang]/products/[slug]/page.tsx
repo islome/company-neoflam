@@ -4,22 +4,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { getProducts } from "@/lib/products";
+import { getProducts } from "@/lib/catalog/products";
 import { galleryFor } from "@/data/gallery";
-import { getProductModels } from "@/lib/product-models";
+import { getProductModels } from "@/lib/catalog/product-models";
 import { formatPrice } from "@/components/catalog/product-card";
 import { Swatch } from "@/components/catalog/swatch";
-import { HeroGallery } from "@/components/detail/hero-gallery";
-import { ProductSelection } from "@/components/detail/product-selection";
-import { Purchase } from "@/components/detail/purchase";
-import { Related } from "@/components/detail/related";
-import { Reveal } from "@/components/reveal";
+import { HeroGallery } from "@/components/product/hero-gallery";
+import { ProductSelection } from "@/components/product/product-selection";
+import { Purchase } from "@/components/product/purchase";
+import { Related } from "@/components/product/related";
+import { Reveal } from "@/components/ui/reveal";
 import { CaretDown } from "@phosphor-icons/react/dist/ssr";
-import { sizeLabel } from "@/lib/variant-label";
+import { sizeLabel } from "@/lib/catalog/variant-label";
+
+/**
+ * Cache Components needs at least one slug at build time. When Supabase has no active products or is not
+ * reachable (for example a Preview deployment without the Supabase env vars), build a placeholder slug
+ * instead; `load` below sends it to the 404 page. Real products still render on their first visit.
+ */
+const PLACEHOLDER_SLUG = "__placeholder__";
 
 export async function generateStaticParams() {
   const products = await getProducts();
-  return locales.flatMap((lang) => products.map((p) => ({ lang, slug: p.slug })));
+  const slugs = products.length ? products.map((p) => p.slug) : [PLACEHOLDER_SLUG];
+  return locales.flatMap((lang) => slugs.map((slug) => ({ lang, slug })));
 }
 
 async function load(params: PageProps<"/[lang]/products/[slug]">["params"]) {

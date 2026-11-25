@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Manrope } from "next/font/google";
 import uz from "@/i18n/dictionaries/uz";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/layout/logo";
 import "./globals.css";
 
 const manrope = Manrope({

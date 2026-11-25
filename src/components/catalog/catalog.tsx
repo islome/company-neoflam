@@ -1,6 +1,6 @@
 "use client";
 
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "@/components/ui/product-image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +19,7 @@ import {
   sortKeys,
   type Filters,
   type SortKey,
-} from "@/lib/catalog-filters";
+} from "@/lib/catalog/catalog-filters";
 import { FilterGroups } from "./filter-groups";
 import { ProductCard } from "./product-card";
 import promoImage from "../../../public/images/products/pans-flatlay-square.jpg";

@@ -7,7 +7,7 @@
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { USDZExporter } from "three/examples/jsm/exporters/USDZExporter.js";
-import type { ModelRecipe, Palette, Shape } from "../data/models";
+import type { ModelRecipe, Palette, Shape } from "@/data/models";
 
 const SEG = 96;
 const cm = (n: number) => n / 100;

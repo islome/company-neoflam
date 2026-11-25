@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, ImageSquare, Plus, Star, Trash, UploadSimple } from "@phosphor-icons/react";
 import { categoryKeys, colorKeys, featureKeys, type CategoryKey, type ColorKey, type FeatureKey } from "@/data/catalog";
 import { variantTypes, type Variant, type VariantType } from "@/data/variants";
-import type { StudioProduct } from "@/lib/products";
+import type { StudioProduct } from "@/lib/catalog/products";
 import { Swatch } from "@/components/catalog/swatch";
 import { createImageUpload, deleteProduct, saveProduct } from "@/app/[lang]/studio/actions";
 

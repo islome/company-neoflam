@@ -16,8 +16,8 @@ const ru: Dictionary = {
   },
   nav: {
     products: "Продукция",
-    brands: "Бренды",
-    news: "Новости",
+    popular: "Популярное",
+    collections: "Коллекции",
     stores: "Магазины",
     cta: "Наша продукция",
   },
@@ -272,35 +272,25 @@ const ru: Dictionary = {
   tagline: {
     lines: ["Натуральные материалы.", "Без вредных веществ.", "Польза в каждом блюде."],
   },
-  brands: {
-    title: "Наши бренды",
-    subtitle: "Начало здоровой кухни",
-    cta: "О бренде",
+  popular: {
+    eyebrow: "Хиты продаж",
+    title: "Популярные товары",
+    subtitle: "То, что наши покупатели выбирают чаще всего.",
+    all: "Все товары",
+    prev: "Предыдущий товар",
+    next: "Следующий товар",
   },
   film: {
     titleLines: ["Каждый день счастливая", "и здоровая жизнь, Neoflam"],
     play: "Смотреть фильм",
   },
-  news: {
-    title: "Новости Neoflam",
-    cta: "Все новости",
-    items: [
-      {
-        category: "Награда",
-        title: "FIKA Objet Comfort получила German Design Award 2025",
-        date: "2025.02.05",
-      },
-      {
-        category: "Медиа",
-        title: "Fika в сериале JTBC «Not Exactly a Hero»",
-        date: "2024.05.23",
-      },
-      {
-        category: "Награда",
-        title: "Fika Objet Comfort получила Kitchen Innovation Award 2024",
-        date: "2024.02.29",
-      },
-    ],
+  collections: {
+    eyebrow: "Коллекции",
+    title: "Коллекции Neoflam",
+    subtitle: "У каждой коллекции свой стиль и цвет. Выберите ту, что подойдёт вашей кухне.",
+    explore: "Смотреть",
+    prev: "Предыдущая коллекция",
+    next: "Следующая коллекция",
   },
   stores: {
     eyebrow: "Где купить",
@@ -314,6 +304,14 @@ const ru: Dictionary = {
     showOnMap: "Показать на карте",
     kinds: { main: "Главный магазин", regional: "Региональный магазин" },
     mapSoon: "Карта скоро",
+    copy: "Скопировать адрес",
+    copied: "Скопировано",
+    noAddress: "Адрес уточняется",
+    gestures: {
+      windows: "Чтобы изменить масштаб, прокручивайте карту с Ctrl",
+      mac: "Чтобы изменить масштаб, прокручивайте карту с ⌘",
+      mobile: "Чтобы переместить карту, используйте два пальца",
+    },
   },
   footer: {
     branch: "Филиал в Узбекистане",
