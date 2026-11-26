@@ -75,6 +75,11 @@ export function StoreMap({
           "CooperativeGesturesHandler.MobileHelpText": gestures.mobile,
         },
       });
+      // The OpenFreeMap styles reference a few sprite icons (e.g. "circle-11", "wood-pattern") that
+      // their sprite sheet doesn't ship. Fill each with a transparent pixel so MapLibre stops warning.
+      m.on("styleimagemissing", (e) => {
+        if (!m.hasImage(e.id)) m.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+      });
       m.touchZoomRotate.disableRotation();
       m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
       map.current = m;

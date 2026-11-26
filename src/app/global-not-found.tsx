@@ -23,7 +23,11 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-    <html lang="uz-Latn" className={`${manrope.variable} ${changaOne.variable} antialiased`}>
+    <html
+      lang="uz-Latn"
+      className={`${manrope.variable} ${changaOne.variable} antialiased`}
+      data-scroll-behavior="smooth"
+    >
       <body className="flex min-h-svh flex-col items-center justify-center gap-6 bg-sun px-4 text-center">
         <Logo className="h-5 w-auto text-brand" />
         <p className="font-[family-name:var(--heading-font)] text-9xl leading-none text-white">404</p>

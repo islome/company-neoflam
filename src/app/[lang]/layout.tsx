@@ -64,7 +64,11 @@ export default async function RootLayout({
   const dict = await getDictionary(lang);
 
   return (
-    <html lang={htmlLang[lang]} className={`${manrope.variable} ${changaOne.variable} antialiased`}>
+    <html
+      lang={htmlLang[lang]}
+      className={`${manrope.variable} ${changaOne.variable} antialiased`}
+      data-scroll-behavior="smooth"
+    >
       <head>
         {/* The home page always opens at the hero (see components/layout/home-scroll.tsx). A plain inline
             script on purpose: it must run while the HTML is parsed, before the browser or Next.js reads
